@@ -1,4 +1,4 @@
-package homework_19_10;
+package homework_1_19_10;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
