@@ -11,8 +11,12 @@ public class task1_22_10 {
     public static void main(String[] args) {
         Scanner in = new Scanner(System.in);
         Pattern pattern = Pattern.compile(",| |\\.");
+        String regex = "a|an|the";
         System.out.println("Введите числа через запятую:");
+        String str = in.nextLine();
+        System.out.println(str.matches(regex));
         try {
+
             String[] strNumbers = pattern.split(in.nextLine().trim());
             int[] intNumbers = new int[strNumbers.length];
             for (int i = 0; i < strNumbers.length; i++) {

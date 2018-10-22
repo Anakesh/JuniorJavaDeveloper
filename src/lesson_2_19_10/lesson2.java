@@ -6,10 +6,11 @@ public class lesson2 {
     public static void main(String[] args) {
         Scanner in = new Scanner(System.in);
         System.out.println("Введите код. Трехзначное число");
-        int code = in.nextInt();
+        /*int code = in.nextInt();
         if(code==123){
             System.out.println("Вы вошли как администратор");
-        }
+        }*/
+
         int ticket = in.nextInt();
         switch(ticket){
             case 33333:
