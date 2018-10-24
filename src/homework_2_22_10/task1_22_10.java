@@ -24,7 +24,7 @@ public class task1_22_10 {
             }
             int buff;
             for (int i = 0; i < intNumbers.length; i++) {
-                for (int j = 1; j < intNumbers.length; j++) {
+                for (int j = 1; j < (intNumbers.length) ; j++) {
                     if (intNumbers[j] < intNumbers[j - 1]) {
                         buff = intNumbers[j];
                         intNumbers[j] = intNumbers[j - 1];
