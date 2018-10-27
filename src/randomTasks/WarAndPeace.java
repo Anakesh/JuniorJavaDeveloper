@@ -61,7 +61,7 @@ public class WarAndPeace
                         for(int j=0;j<topTenWords.length;j++){
                             if (numOfEachWord.get(currentStrWorld) > numOfEachWord.get(topTenWords[j])) {
                                 String[] buffStr = new String[j];
-                                System.arraycopy(topTenWords, j, buffStr, j, topTenWords.length - j - 1);
+                                System.arraycopy(topTenWords, j,   buffStr, j, topTenWords.length - j - 1);
                                 topTenWords[j] = currentStrWorld;
                                 System.arraycopy(buffStr, j, topTenWords, j + 1, topTenWords.length - j - 1);
                             }

@@ -8,7 +8,6 @@ public class Triangle extends Figure {
     private float height;
 
     public Triangle(int x,int y){
-        super(1,2);
 
     }
 
