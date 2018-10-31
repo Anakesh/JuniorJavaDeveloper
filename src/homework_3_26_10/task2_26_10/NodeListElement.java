@@ -8,8 +8,9 @@ public class NodeListElement extends Node {
     private int index;
 
     public NodeListElement(int value){super(value);}
-    public NodeListElement(Node node){
+    public NodeListElement(Node node, int index){
         this.value = node.getValue();
+        this.index = index;
     }
 
     public NodeListElement getNextNode() {

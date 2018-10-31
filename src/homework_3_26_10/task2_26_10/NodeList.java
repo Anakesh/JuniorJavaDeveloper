@@ -5,23 +5,20 @@ import java.util.List;
 
 public class NodeList {
     private NodeListElement first;
+    private NodeListElement last;
     private int length = 0;
 
     public void add(Node node) {
+
         if (first != null) {
-            NodeListElement next = first;
-            while (next.getNextNode() != null) {
-                next = next.getNextNode();
-            }
-            next.setNextNode(new NodeListElement(node));
-            next.getNextNode().setIndex(next.getIndex() + 1);
+            last.setNextNode(new NodeListElement(node,last.getIndex()+1));
+            last = last.getNextNode();
             length++;
         } else {
-            first = new NodeListElement(node);
-            first.setIndex(0);
+            first = new NodeListElement(node,0);
+            last = first;
             length++;
         }
-        List<Integer> inn = new ArrayList<>();
     }
 
     public void removeByValue(int value) {
@@ -31,9 +28,15 @@ public class NodeList {
                 UpdateIndexes(first);
                 length--;
             }
-            NodeListElement current = first.getNextNode();
-            NodeListElement previous = first;
-            remove(previous, current, value);
+            NodeListElement current = first;
+            while(current.getNextNode()!=null){
+                if(current.getNextNode().getValue()==value){                    ;
+                    removeNextNode(current);
+                }
+                else{
+                    current = current.getNextNode();
+                }
+            }
         } else
             System.out.println("Массив пуст");
     }
@@ -43,18 +46,13 @@ public class NodeList {
             if (index == 0) {
                 first = first.getNextNode();
                 UpdateIndexes(first);
+                length--;
             } else {
-                NodeListElement current = first.getNextNode();
-                NodeListElement previous = first;
-                while (current.getIndex() != index) {
-                    previous = current;
+                NodeListElement current = first;
+                for(int i=0;i<index-1;i++)
                     current = current.getNextNode();
-                }
-                previous.setNextNode(current.getNextNode());
-                if (previous.getNextNode() != null)
-                    UpdateIndexes(previous.getNextNode());
+                removeNextNode(current);
             }
-            length--;
         } else
             System.out.println((first == null) ? "Массив пуст" : "Индекс превышает длинну массива, Length=" + length);
     }
@@ -74,21 +72,18 @@ public class NodeList {
 
     public void set(int index, Node node) {
         if (first != null && index < length) {
-            NodeListElement nodeListElement = new NodeListElement(node);
+            NodeListElement nodeListElement = new NodeListElement(node,index);
             if (index == 0) {
                 nodeListElement.setNextNode(first.getNextNode());
-                nodeListElement.setIndex(first.getIndex());
                 first = nodeListElement;
             } else {
-                NodeListElement current = first.getNextNode();
-                NodeListElement previous = first;
-                while (current.getIndex() != index) {
-                    previous = current;
+                NodeListElement current = first;
+                for(int i=0;i<index-1;i++)
                     current = current.getNextNode();
-                }
-                previous.setNextNode(nodeListElement);
-                nodeListElement.setNextNode(current.getNextNode());
-                nodeListElement.setIndex(current.getIndex());
+                nodeListElement.setNextNode(current.getNextNode().getNextNode());
+                current.setNextNode(nodeListElement);
+                if(nodeListElement.getNextNode()==null)
+                    last = nodeListElement;
             }
         } else
             System.out.println((first == null) ? "Массив пуст" : "Индекс превышает длинну массива, Length=" + length);
@@ -136,18 +131,13 @@ public class NodeList {
         return first == null;
     }
 
-    private void remove(NodeListElement previousNode, NodeListElement currentNode, int value) {
-        if (currentNode.getValue() == value) {
-            previousNode.setNextNode(currentNode.getNextNode());
-            length--;
-            if (previousNode.getNextNode() != null) {
-                UpdateIndexes(previousNode.getNextNode());
-                remove(previousNode, previousNode.getNextNode(), value);
-            }
-        } else {
-            if (currentNode.getNextNode() != null)
-                remove(currentNode, currentNode.getNextNode(), value);
-        }
+    private void removeNextNode(NodeListElement node){
+        node.setNextNode(node.getNextNode().getNextNode());
+        if (node.getNextNode() != null)
+            UpdateIndexes(node.getNextNode());
+        else
+            last = node;
+        length--;
     }
 
     private void UpdateIndexes(NodeListElement node) {
