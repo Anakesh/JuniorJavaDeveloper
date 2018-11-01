@@ -11,9 +11,9 @@ class MyListElement<T> {
             this.nextMyListElement = new MyListElement<>(object);
     }
 
-    MyListElement<T> recursiveReverse(int length){
+    MyListElement<T> recursiveReverse(){
         if(this.getNextMyListElement()!=null) {
-            MyListElement<T> newFirst = this.getNextMyListElement().recursiveReverse(length);
+            MyListElement<T> newFirst = this.getNextMyListElement().recursiveReverse();
             this.getNextMyListElement().setNextMyListElement(this);
             return newFirst;
         }
@@ -33,10 +33,6 @@ class MyListElement<T> {
 
     T getObject() {
         return object;
-    }
-
-    void setObject(T object) {
-        this.object = object;
     }
 
     MyListElement<T> getNextMyListElement() {

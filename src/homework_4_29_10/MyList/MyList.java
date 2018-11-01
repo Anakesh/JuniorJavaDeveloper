@@ -24,7 +24,7 @@ public class MyList<T> implements IMyList<T>,IMyStack<T>,IMyQueue<T> {
 
     public void add(T object) {
         if (first == null) {
-            first = new MyListElement<T>(object);
+            first = new MyListElement<>(object);
             last = first;
         } else {
             last.addNextMyListElement(object);
@@ -91,7 +91,7 @@ public class MyList<T> implements IMyList<T>,IMyStack<T>,IMyQueue<T> {
     }
 
     public void reverseList() {
-        MyListElement<T> newFirst = first.recursiveReverse(length);
+        MyListElement<T> newFirst = first.recursiveReverse();
         first.setNextMyListElement(null);
         last = first;
         first = newFirst;
