@@ -1,4 +1,4 @@
-package lesson_7_31_10;
+package lesson_7_31_10.Book;
 
 public class Main {
     public static void main(String[] args) {

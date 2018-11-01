@@ -11,13 +11,16 @@ public class FileHandler {
         String fileType;
         if(matcher.find()) {
             fileType = matcher.group().replace(".", "");
-            String output = "Все очень плохо";
+            String output;
             switch(fileType){
                 case "xml":
                     output = XmlHandler.readXml(filePath);
                     break;
                 case "txt":
                     output = TxtHandler.readTxt(filePath);
+                    break;
+                default:
+                    output = "Данное тип файлов не поддерживается";
                     break;
             }
             return output;

@@ -1,4 +1,4 @@
-package lesson_7_31_10;
+package lesson_7_31_10.Book;
 
 import java.util.Objects;
 import java.util.Random;
