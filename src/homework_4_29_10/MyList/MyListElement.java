@@ -24,7 +24,7 @@ class MyListElement<T> {
 
     @Override
     public String toString(){
-        return object.getClass().getSimpleName()+": "+object.toString();
+        return object.getClass().getSimpleName()+"{"+object.toString()+"}";
     }
 
     MyListElement(T object) {

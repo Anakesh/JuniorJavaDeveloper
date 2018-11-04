@@ -53,4 +53,16 @@ public class JDBCExample {
             }
         }
     }
+
+    public static void main(String[] args) {
+
+        try {
+            JDBCExample.createTable();
+            JDBCExample.insertIntoTable();
+            JDBCExample.selectData();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+
+    }
 }

@@ -23,6 +23,8 @@ public class Main {
         nodeMyList.pop();
         nodeMyList.unshift();
         System.out.println(nodeMyList.toString());
+        nodeMyList.set(0,9);
+        System.out.println(nodeMyList);
 
         FileHandler fileHandler = new FileHandler();
         String filePath = "foo\\foo1\\foo2\\foo.txt";

@@ -1,5 +1,9 @@
 package homework_4_29_10.MyList;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 public class MyList<T> implements IMyList<T>,IMyStack<T>,IMyQueue<T> {
     private MyListElement<T> first;
     private MyListElement<T> last;
@@ -13,12 +17,47 @@ public class MyList<T> implements IMyList<T>,IMyStack<T>,IMyQueue<T> {
             return null;
     }
 
-    public void set(T object, int index) {
-        MyListElement<T> previous = findElementByIndex(index - 1);
-        if (previous != null && index < length && index >= 0) {
-            MyListElement<T> newElement = new MyListElement<>(object);
-            newElement.setNextMyListElement(previous.getNextMyListElement().getNextMyListElement());
-            previous.setNextMyListElement(newElement);
+    public int getIndex(T object){
+        MyListElement<T> current = first;
+        for(int i = 0; i<length;i++){
+            if(current.getObject().equals(object))
+                return i;
+            current = current.getNextMyListElement();
+        }
+        return -1;
+    }
+
+    public T peekFirst(){
+        return first.getObject();
+    }
+
+    public T peekLast(){
+        return last.getObject();
+    }
+
+    public boolean contains(T object){
+        MyListElement<T> current = first;
+        while(current!=null){
+            if(current.getObject().equals(object))
+                return true;
+            current = current.getNextMyListElement();
+        }
+        return false;
+    }
+
+    public void set(int index, T object) {
+        if(index==0){
+            MyListElement<T> next = first.getNextMyListElement();
+            first = new MyListElement<>(object);
+            first.setNextMyListElement(next);
+        }
+        else{
+            MyListElement<T> previous = findElementByIndex(index - 1);
+            if (previous != null && index < length && index > 0) {
+                MyListElement<T> newElement = new MyListElement<>(object);
+                newElement.setNextMyListElement(previous.getNextMyListElement().getNextMyListElement());
+                previous.setNextMyListElement(newElement);
+            }
         }
     }
 
@@ -99,6 +138,25 @@ public class MyList<T> implements IMyList<T>,IMyStack<T>,IMyQueue<T> {
 
     public int size() {
         return length;
+    }
+
+    public List<T> toArrayList(){
+        List<T> list = new ArrayList<>();
+        MyListElement<T> current = first;
+        for(int i=0;i<length;i++){
+            list.add(current.getObject());
+            current=current.getNextMyListElement();
+        }
+        return list;
+    }
+    public List<String> toStringList(){
+        List<String> list = new ArrayList<>();
+        MyListElement<T> current = first;
+        for(int i=0;i<length;i++){
+            list.add(current.getObject().toString());
+            current = current.getNextMyListElement();
+        }
+        return list;
     }
 
     private MyListElement<T> findElementByIndex(int index) {
