@@ -13,6 +13,7 @@ class Phrase {
             this.phrase[i] = word;
             i++;
         }
+        quantity = 0;
     }
 
     int getQuantity() {

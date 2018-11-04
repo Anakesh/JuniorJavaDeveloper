@@ -12,6 +12,8 @@ public class Main {
         txtFileParser.ReadFile(System.getProperty("user.dir")+"\\wp.txt",3);
         System.out.println(txtFileParser.getTopTenWordsInString());
         System.out.println(txtFileParser.getTopTenPhrasesInString());
+        System.out.println(txtFileParser.getPhraseQuantity("war and peace"));
+        System.out.println(txtFileParser.getPhraseQuantity("he did not "));
 
     }
 }
