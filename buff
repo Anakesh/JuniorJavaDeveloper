@@ -1,0 +1,96 @@
+public interface IAlarm {
+    void tempChanged(int temp);
+}
+
+public class GreenAlarm implements IAlarm {
+    private boolean isActive = false;
+    private int activationTemp = 100;
+
+    private void setActive(boolean active) {
+        isActive = active;
+        System.out.print(isActive ? "Green alarm activated" : "Green alarm deactivated");
+    }
+
+    @Override
+    public void tempChanged(int temp) {
+        if (temp >= activationTemp) {
+            if (!this.isActive)
+                setActive(true);
+        } else if (this.isActive)
+            setActive(false);
+    }
+}
+
+public class RedAlarm implements IAlarm {
+    public int getRedInt() {
+        return redInt;
+    }
+
+    public int redInt = 0;
+    private boolean isActive = false;
+    private int activationTemp = 600;
+
+    private void setActive(boolean active) {
+        isActive = active;
+        System.out.print(isActive ? "Red alarm activated" : "Red alarm deactivated");
+    }
+
+    @Override
+    public void tempChanged(int temp) {
+        if (temp >= activationTemp) {
+            if (!this.isActive)
+                setActive(true);
+        } else if (this.isActive)
+            setActive(false);
+    }
+}
+
+public class YellowAlarm implements IAlarm {
+    private boolean isActive = false;
+    private int activationTemp = 300;
+
+    private void setActive(boolean active) {
+        isActive = active;
+        System.out.print(isActive ? "Yellow alarm activated" : "Yellow alarm deactivated");
+    }
+
+    @Override
+    public void tempChanged(int temp) {
+        if (temp >= activationTemp) {
+            if (!this.isActive)
+                setActive(true);
+        } else if (this.isActive)
+            setActive(false);
+    }
+}
+
+public class Sensor {
+    IAlarm[] alarms;
+
+    public Sensor(IAlarm... alarms) {
+        this.alarms = alarms;
+    }
+
+    public void checkAlams(int temp){
+        for(IAlarm alarm :alarms){
+            alarm.tempChanged(temp);
+        }
+    }
+}
+
+
+public class Main {
+    public static void main(String[] args) {
+        IAlarm red = new RedAlarm();
+
+        Sensor sensor = new Sensor(new GreenAlarm(), new YellowAlarm(),new RedAlarm());
+        int j = 50;
+        for(int i= 0;j!=-50||i>=0;i+=j){
+            System.out.print("Current temperature: "+i+'\t');
+            sensor.checkAlams(i);
+            System.out.println();
+            if(i>=700)
+                j=-50;
+        }
+    }
+}
