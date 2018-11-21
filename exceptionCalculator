@@ -1,0 +1,106 @@
+public class CalculationException extends Exception {
+    public CalculationException() {
+        super();
+    }
+
+    public CalculationException(String message) {
+        super(message);
+    }
+
+    public CalculationException(String message, Throwable cause) {
+        super(message, cause);
+    }
+}
+
+public class Calculator {
+    private Map<String,Integer> variables = new HashMap<>();
+    private Pattern invalidFormat = Pattern.compile("([^\\w+\\-*/()^=])|([\\W&&[^()]]{2,})|(.*=.*=)|([+\\-*/^]\\))");
+    private Pattern newVariablePattern = Pattern.compile("^[a-zA-Z]+=");
+    private Pattern operationPattern = Pattern.compile("[+\\-*/^]");
+    public void parseInput(String input) throws CalculationException {
+
+        //Убираем все пробелы
+        String filteredInput = input.replaceAll("\\s+","");
+
+        //Проверка на несоответствие формату
+        if(invalidFormat.matcher(filteredInput).find()&&
+                (getNumberOfMatches(filteredInput,"(")!=getNumberOfMatches(filteredInput,")")))
+            throw new CalculationException("Wrong format");
+        Matcher newVariableMatcher = newVariablePattern.matcher(filteredInput);
+        if(newVariableMatcher.find()){
+            int valueStartIndex = newVariableMatcher.end();
+            String newVariable = filteredInput.substring(0,valueStartIndex-1);
+            filteredInput =  filteredInput.substring(valueStartIndex,filteredInput.length());
+            filteredInput = knownVariableInsert(filteredInput);
+            if(operationPattern.matcher(filteredInput).find()){
+                int variableValue = solveEquation(filteredInput);
+                variables.put(newVariable,variableValue);
+            } else{
+                int variableValue;
+                try {
+                    variableValue = Integer.parseInt(filteredInput);
+                }catch (NumberFormatException ex){
+                    throw new CalculationException("Wrong format",ex);
+                }
+                variables.put(newVariable,variableValue);
+            }
+            System.out.println(newVariable+"="+variables.get(newVariable));
+        } else {
+            knownVariableInsert(filteredInput);
+            System.out.println(solveEquation(filteredInput));
+        }
+    }
+    private int solveEquation(String str){
+        Pattern pattern = Pattern.compile("\\([0-9+\\-*/^]+\\)");
+        Matcher matcher = pattern.matcher(str);
+        while(matcher.find()){
+            int startIndex = matcher.start();
+            int endIndex = matcher.end()-1;
+            String inEquation = matcher.group().replaceAll("^\\(","").replaceAll("\\)$","s");
+            int answer = solveEquation(inEquation);
+            str = str.replaceFirst(pattern.toString(), String.valueOf(answer));
+        }
+        return 0;
+    }
+    private int getNumberOfMatches(final String str, String regEx){
+        Matcher matcher = Pattern.compile(regEx).matcher(str);
+        int count =0;
+        while(matcher.find())
+            count++;
+        return count;
+    }
+    private String knownVariableInsert(String str) throws CalculationException {
+        TreeSet<String> vars = new TreeSet<>(
+                Arrays.asList(
+                        str.replaceAll("[^a-zA-Z]"," ")
+                                .replaceAll("\\s+"," ")
+                                .split(" ")));
+        for(String var : vars){
+            Integer value = variables.get(var);
+            if(value==null)
+                throw new CalculationException("Unknown variable");
+            str = str.replace(var,value.toString());
+        }
+        return str;
+    }
+}
+public class Main {
+    public static void main(String[] args) {
+
+        Pattern pattern = Pattern.compile("^[a-zA-Z]+=");
+        Pattern invalidFormat = Pattern.compile("([^\\w+\\-*/()^=])|([\\W&&[^()]]{2,})|(.*=.*=)");
+        Scanner in = new Scanner(System.in);
+        Calculator calculator = new Calculator();
+
+        while(true){
+            String input = in.nextLine();
+            try{
+                calculator.parseInput(input);
+            } catch (CalculationException ex){
+                System.out.println(ex.getMessage());
+            }
+        }
+
+
+    }
+}
