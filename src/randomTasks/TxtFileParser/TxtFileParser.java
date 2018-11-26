@@ -12,8 +12,8 @@ public class TxtFileParser {
     private Map<Integer, List<String>> wordsByCharNum;
     private Map<Integer, List<String>> wordsByCharNumNoStopWords;
     private long totalLetterCount;
-    private MyList<Word> topTenWords;
-    private MyList<Phrase> topTenPhrases;
+    private TreeSet<Word> topTenWords;
+    private TreeSet<Phrase> topTenPhrases;
 
 
     public void ReadFile(String path, int numOfWordsInPhrase) {
@@ -23,14 +23,14 @@ public class TxtFileParser {
             char letter;
             String stopWords = "a|as|on|the|an|to|in|up|of|and|i|you|he|it|she|her|him|his|that|this|there|here|was|is|were|with|are|am|by|has|have|not|had|but" +
                     "|at|be|for|all|if|me|do";
-            StringBuilder currentWord = new StringBuilder();
+            StringBuilder currentWordStrBuilder = new StringBuilder();
 
             wordMap = new HashMap<>();
             phraseMap = new HashMap<>();
             charMap = new HashMap<>();
             Deque<Word> phraseQueue = new ArrayDeque<>();
-            topTenWords = new MyList<>();
-            topTenPhrases = new MyList<>();
+            topTenWords = new TreeSet<>();
+            topTenPhrases = new TreeSet<>();
             wordsByCharNum = new HashMap<>();
             wordsByCharNumNoStopWords = new HashMap<>();
 
@@ -40,22 +40,22 @@ public class TxtFileParser {
                     continue;
                 if (Character.isAlphabetic(letter)) {
                     //Добавление буквы к текущему слову
-                    currentWord.append(letter);
+                    currentWordStrBuilder.append(letter);
                     //Добавление/обоновление буквы в хэш таблицы букв с увеличение количество повторений данной буквы
                     Integer charNum = charMap.get(letter);
                     charMap.put(letter, (charNum == null) ? 1 : charNum + 1);
                     totalLetterCount++;
-                } else if (currentWord.length() > 0) {
-                    String currentStrWorld = currentWord.toString();
+                } else if (currentWordStrBuilder.length() > 0) {
+                    String currentStrWorld = currentWordStrBuilder.toString();
                     //Добавление в хэш таблицу слов текущего слова, при его отсутствии
                     //(при добавлении слова в таблицу количество повторений равно 0)
-                    Word word = wordMap.get(currentStrWorld);
-                    if (word == null) {
+                    Word currentWord = wordMap.get(currentStrWorld);
+                    if (currentWord == null) {
                         wordMap.put(currentStrWorld, new Word(currentStrWorld));
-                        word = wordMap.get(currentStrWorld);
+                        currentWord = wordMap.get(currentStrWorld);
                     }
                     //Увеличение количества повторений данного слова
-                    word.incrementQuantity();
+                    currentWord.incrementQuantity();
                     //Добавление текущего слова в хэш таблицу со словами, отсортированными по количеству букв
                     addWord(currentStrWorld, wordsByCharNum);
                     if (!currentStrWorld.matches(stopWords)) {
@@ -63,12 +63,16 @@ public class TxtFileParser {
                         addWord(currentStrWorld, wordsByCharNumNoStopWords);
                     }
                     //Добавление слова если топ пустой, а иначе сравнение его повторений с топом
-                    if (topTenWords.size() > 0)
-                        topTenWordsCheck(word);
-                    else
-                        topTenWords.add(word);
+                    if (topTenWords.size() > 0) {
+                        if (!topTenWords.contains(currentWord) && topTenWords.last().getQuantity() <= currentWord.getQuantity()) {
+                            topTenWords.add(currentWord);
+                            if (topTenWords.size() > 10)
+                                topTenWords.remove(topTenWords.last());
+                        }
+                    } else
+                        topTenWords.add(currentWord);
                     //Добавление текущего слова в фразу
-                    phraseQueue.addLast(word);
+                    phraseQueue.addLast(currentWord);
                     //Если длинна фразы превышает заданную, то удаляем первое слово
                     if (phraseQueue.size() > numOfWordsInPhrase)
                         phraseQueue.removeFirst();
@@ -84,18 +88,22 @@ public class TxtFileParser {
                         //Увеличение количества повторений данной фразы
                         phrase.incrementQuantity();
                         //Добавление фразы если топ пустой, а иначе сравнение ее повторений с топом
-                        if (topTenPhrases.size() > 0)
-                            topTenPhrasesCheck(phrase);
-                        else
+                        if (topTenPhrases.size() > 0) {
+                            if (!topTenPhrases.contains(phrase) && topTenPhrases.last().getQuantity() <= phrase.getQuantity()) {
+                                topTenPhrases.add(phrase);
+                                if (topTenPhrases.size() > 10)
+                                    topTenPhrases.remove(topTenPhrases.last());
+                            }
+                        } else
                             topTenPhrases.add(phrase);
                     }
                     //Создание нового пустого слова
-                    currentWord = new StringBuilder();
+                    currentWordStrBuilder = new StringBuilder();
                 }
-            }
+            }/*
             //Для убоного дебага топов
             List<String> words = topTenWords.toStringList();
-            List<String> phrases = topTenPhrases.toStringList();
+            List<String> phrases = topTenPhrases.toStringList();*/
             //Для breakpoint'а
             System.out.println("");
         } catch (Exception ex) {
@@ -103,14 +111,16 @@ public class TxtFileParser {
         }
 
     }
+/*
 
     public List<String> getTopTenWordsInString() {
-        return topTenWords.toStringList();
+        return topTenWords.toString();
     }
 
     public List<String> getTopTenPhrasesInString() {
         return topTenPhrases.toStringList();
     }
+*/
 
     public int getPhraseQuantity(String phrase) {
         return phraseMap.get(phrase.toLowerCase().trim()).getQuantity();
@@ -132,6 +142,7 @@ public class TxtFileParser {
             }
         }
     }
+/*
 
     private void topTenWordsCheck(Word currentWord) {
         //Если в топе нет текущего слова
@@ -219,6 +230,7 @@ public class TxtFileParser {
             }
         }
     }
+*/
 
     private String getStrPhrase(Deque<Word> phraseQueue) {
         StringBuilder str = new StringBuilder();

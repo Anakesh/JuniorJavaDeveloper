@@ -1,7 +1,7 @@
 package homework_4_29_10.MyList;
 
 class MyListElement<T> {
-    private T object;
+    private T element;
     private MyListElement<T> nextMyListElement;
 
     void addNextMyListElement(T object){
@@ -24,15 +24,15 @@ class MyListElement<T> {
 
     @Override
     public String toString(){
-        return object.getClass().getSimpleName()+"{"+object.toString()+"}";
+        return element.getClass().getSimpleName()+"{"+ element.toString()+"}";
     }
 
     MyListElement(T object) {
-        this.object = object;
+        this.element = object;
     }
 
-    T getObject() {
-        return object;
+    T getElement() {
+        return element;
     }
 
     MyListElement<T> getNextMyListElement() {

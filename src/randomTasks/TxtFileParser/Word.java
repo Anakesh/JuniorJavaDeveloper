@@ -2,11 +2,11 @@ package randomTasks.TxtFileParser;
 
 import java.util.Objects;
 
-class Word {
+public class Word implements Comparable<Word> {
     private String word;
     private int quantity;
 
-    Word(String word) {
+    public Word(String word) {
         this.word = word;
         this.quantity = 0;
     }
@@ -15,14 +15,18 @@ class Word {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
+
         Word word1 = (Word) o;
-        return quantity == word1.quantity &&
-                Objects.equals(word, word1.word);
+
+        if (quantity != word1.quantity) return false;
+        return word.equals(word1.word);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(word, quantity);
+        int result = word.hashCode();
+        result = 31 * result + quantity;
+        return result;
     }
 
     @Override
@@ -40,7 +44,15 @@ class Word {
         return quantity;
     }
 
-    void incrementQuantity() {
+    public void incrementQuantity() {
         this.quantity++;
+    }
+
+    @Override
+    public int compareTo(Word o) {
+//        if(this.equals(o)) return 0;
+//        else if(o.quantity-this.quantity==0) return -1;
+//        else
+            return o.quantity-this.quantity;
     }
 }

@@ -1,7 +1,6 @@
 package homework_4_29_10.MyList;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class MyList<T> implements IMyList<T>,IMyStack<T>,IMyQueue<T> {
@@ -12,7 +11,7 @@ public class MyList<T> implements IMyList<T>,IMyStack<T>,IMyQueue<T> {
     public T get(int index) {
         MyListElement<T> target = findElementByIndex(index);
         if (target != null)
-            return target.getObject();
+            return target.getElement();
         else
             return null;
     }
@@ -20,7 +19,7 @@ public class MyList<T> implements IMyList<T>,IMyStack<T>,IMyQueue<T> {
     public int getIndex(T object){
         MyListElement<T> current = first;
         for(int i = 0; i<length;i++){
-            if(current.getObject().equals(object))
+            if(current.getElement().equals(object))
                 return i;
             current = current.getNextMyListElement();
         }
@@ -28,17 +27,17 @@ public class MyList<T> implements IMyList<T>,IMyStack<T>,IMyQueue<T> {
     }
 
     public T peekFirst(){
-        return first.getObject();
+        return first.getElement();
     }
 
     public T peekLast(){
-        return last.getObject();
+        return last.getElement();
     }
 
     public boolean contains(T object){
         MyListElement<T> current = first;
         while(current!=null){
-            if(current.getObject().equals(object))
+            if(current.getElement().equals(object))
                 return true;
             current = current.getNextMyListElement();
         }
@@ -108,7 +107,7 @@ public class MyList<T> implements IMyList<T>,IMyStack<T>,IMyQueue<T> {
 
     public T pop() {
         MyListElement<T> previous = findElementByIndex(length - 2);
-        T out = last.getObject();
+        T out = last.getElement();
         previous.setNextMyListElement(null);
         last = previous;
         length--;
@@ -123,7 +122,7 @@ public class MyList<T> implements IMyList<T>,IMyStack<T>,IMyQueue<T> {
     }
 
     public T unshift() {
-        T out = first.getObject();
+        T out = first.getElement();
         first = first.getNextMyListElement();
         length--;
         return out;
@@ -144,7 +143,7 @@ public class MyList<T> implements IMyList<T>,IMyStack<T>,IMyQueue<T> {
         List<T> list = new ArrayList<>();
         MyListElement<T> current = first;
         for(int i=0;i<length;i++){
-            list.add(current.getObject());
+            list.add(current.getElement());
             current=current.getNextMyListElement();
         }
         return list;
@@ -153,7 +152,7 @@ public class MyList<T> implements IMyList<T>,IMyStack<T>,IMyQueue<T> {
         List<String> list = new ArrayList<>();
         MyListElement<T> current = first;
         for(int i=0;i<length;i++){
-            list.add(current.getObject().toString());
+            list.add(current.getElement().toString());
             current = current.getNextMyListElement();
         }
         return list;
