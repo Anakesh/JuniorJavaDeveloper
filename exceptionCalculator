@@ -1,106 +1,156 @@
-public class CalculationException extends Exception {
-    public CalculationException() {
-        super();
+package com.company.FilesTasks;
+
+import com.company.FilesTasks.MyBufferedInputStream;
+import com.company.FilesTasks.MyBufferedOutputStream;
+import jdk.internal.util.xml.impl.Input;
+
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Vector;
+
+/**
+ * Created by Ю on 26.11.2018.
+ */
+public class FileHandler {
+
+    public void copyFile(File sourceFile, File targetFile) throws IOException {
+        try(
+                InputStream sourceInStr = new FileInputStream(sourceFile);
+                BufferedInputStream sourceBufInStr = new BufferedInputStream(sourceInStr);
+                OutputStream targetOutStr = new FileOutputStream(targetFile);
+                BufferedOutputStream targetBufOutStr = new BufferedOutputStream(targetOutStr);
+                ){
+            int b;
+            while((b = sourceBufInStr.read())>-1){
+                targetBufOutStr.write(b);
+            }
+        }
     }
 
-    public CalculationException(String message) {
-        super(message);
+    public void splitFileByByteLength(File sourceFile, long lengthOfNewFiles) throws IOException {
+        int numOfFiles;
+        if (sourceFile.length() % lengthOfNewFiles == 0)
+            numOfFiles = (int) (sourceFile.length() / lengthOfNewFiles);
+        else
+            numOfFiles = (int) (sourceFile.length() / lengthOfNewFiles + 1);
+        MyBufferedOutputStream[] buffOutStreams = new MyBufferedOutputStream[numOfFiles];
+        String[] fileName = sourceFile.getName().split("\\.");
+        for(int i = 0;i<buffOutStreams.length;i++) {
+            buffOutStreams[i] = new MyBufferedOutputStream(fileName[0]+ "_" +"part" + (i+1) +  fileName[1]);
+        }
+        try(
+                MyBufferedInputStream buffInStr = new MyBufferedInputStream(sourceFile)
+        ){
+            int currFileNum = 0;
+            long currFileLength = 0;
+            int b;
+            while((b=buffInStr.read())>0){
+                buffOutStreams[currFileNum].write(b);
+                currFileLength++;
+                if(currFileLength>=lengthOfNewFiles){
+                    currFileNum++;
+                    currFileLength = 0;
+                }
+            }
+        }
+        for(int i = 0;i<buffOutStreams.length;i++)
+            buffOutStreams[i].close();
     }
 
-    public CalculationException(String message, Throwable cause) {
-        super(message, cause);
+    public void combineFiles(File[] files, String newFilePath) throws IOException {
+        Vector<InputStream> inVector = new Vector<>();
+        for(int i = 0;i<files.length;i++)
+            inVector.add(new FileInputStream(files[i]));
+        SequenceInputStream seqStream = new SequenceInputStream(inVector.elements());
+        try(MyBufferedOutputStream buffOutStr = new MyBufferedOutputStream(newFilePath)){
+            byte[] buf = new byte[1024];
+            int len;
+
+            while ((len = seqStream.read(buf)) > 0) {
+                buffOutStr.write(buf, 0, len);
+            }
+        }
+    }
+
+
+
+
+}
+public class MyBufferedInputStream extends BufferedInputStream {
+    public MyBufferedInputStream(File file) throws FileNotFoundException {
+        super(new FileInputStream(file));
     }
 }
-
-public class Calculator {
-    private Map<String,Integer> variables = new HashMap<>();
-    private Pattern invalidFormat = Pattern.compile("([^\\w+\\-*/()^=])|([\\W&&[^()]]{2,})|(.*=.*=)|([+\\-*/^]\\))");
-    private Pattern newVariablePattern = Pattern.compile("^[a-zA-Z]+=");
-    private Pattern operationPattern = Pattern.compile("[+\\-*/^]");
-    public void parseInput(String input) throws CalculationException {
-
-        //Убираем все пробелы
-        String filteredInput = input.replaceAll("\\s+","");
-
-        //Проверка на несоответствие формату
-        if(invalidFormat.matcher(filteredInput).find()&&
-                (getNumberOfMatches(filteredInput,"(")!=getNumberOfMatches(filteredInput,")")))
-            throw new CalculationException("Wrong format");
-        Matcher newVariableMatcher = newVariablePattern.matcher(filteredInput);
-        if(newVariableMatcher.find()){
-            int valueStartIndex = newVariableMatcher.end();
-            String newVariable = filteredInput.substring(0,valueStartIndex-1);
-            filteredInput =  filteredInput.substring(valueStartIndex,filteredInput.length());
-            filteredInput = knownVariableInsert(filteredInput);
-            if(operationPattern.matcher(filteredInput).find()){
-                int variableValue = solveEquation(filteredInput);
-                variables.put(newVariable,variableValue);
-            } else{
-                int variableValue;
-                try {
-                    variableValue = Integer.parseInt(filteredInput);
-                }catch (NumberFormatException ex){
-                    throw new CalculationException("Wrong format",ex);
-                }
-                variables.put(newVariable,variableValue);
-            }
-            System.out.println(newVariable+"="+variables.get(newVariable));
-        } else {
-            knownVariableInsert(filteredInput);
-            System.out.println(solveEquation(filteredInput));
+public class MyBufferedOutputStream extends BufferedOutputStream {
+    public MyBufferedOutputStream(File file) throws FileNotFoundException {
+        super(new FileOutputStream(file));
+    }
+    public MyBufferedOutputStream(String fileName) throws FileNotFoundException  {
+        super(new FileOutputStream(fileName));
+    }
+}
+public class Tasks {
+    public long doTaskOne(String firstFilePath, String secondFilePath) throws IOException {
+        File file1 = new File(firstFilePath);
+        File file2 = new File(secondFilePath);
+        FileHandler handler = new FileHandler();
+        if(file1.exists()){
+            handler.copyFile(file1,file2);
+            return file1.length();
+        }
+        else {
+            throw new IOException("First file doesn't exist");
         }
     }
-    private int solveEquation(String str){
-        Pattern pattern = Pattern.compile("\\([0-9+\\-*/^]+\\)");
-        Matcher matcher = pattern.matcher(str);
-        while(matcher.find()){
-            int startIndex = matcher.start();
-            int endIndex = matcher.end()-1;
-            String inEquation = matcher.group().replaceAll("^\\(","").replaceAll("\\)$","s");
-            int answer = solveEquation(inEquation);
-            str = str.replaceFirst(pattern.toString(), String.valueOf(answer));
+    public void doTaskTwoSplit(String filePath, long lengthOfNewFiles) throws IOException {
+        File file = new File(filePath);
+        FileHandler handler = new FileHandler();
+        if(file.exists()){
+            handler.splitFileByByteLength(file,lengthOfNewFiles);
         }
-        return 0;
-    }
-    private int getNumberOfMatches(final String str, String regEx){
-        Matcher matcher = Pattern.compile(regEx).matcher(str);
-        int count =0;
-        while(matcher.find())
-            count++;
-        return count;
-    }
-    private String knownVariableInsert(String str) throws CalculationException {
-        TreeSet<String> vars = new TreeSet<>(
-                Arrays.asList(
-                        str.replaceAll("[^a-zA-Z]"," ")
-                                .replaceAll("\\s+"," ")
-                                .split(" ")));
-        for(String var : vars){
-            Integer value = variables.get(var);
-            if(value==null)
-                throw new CalculationException("Unknown variable");
-            str = str.replace(var,value.toString());
+        else {
+            throw new IOException("File doesn't exist");
         }
-        return str;
+    }
+    public void doTaskTwoCombine(String[] fileNames, String newFilePath) throws IOException {
+        File[] files = new File[fileNames.length];
+        FileHandler handler = new FileHandler();
+        for(int i = 0;i<files.length;i++) {
+            files[i] = new File(fileNames[i]);
+            if(!files[i].exists())
+                throw new IOException("File number "+(i+1)+"doesn't exist");
+        }
+        handler.combineFiles(files,newFilePath);
     }
 }
 public class Main {
     public static void main(String[] args) {
+        Tasks tasks = new Tasks();
+        Scanner input = new Scanner(System.in);
+        //First task
+        /*
+        try{
+            System.out.println("Path of file to copy:");
+            String firstFileName = input.nextLine();
+            System.out.println("Path of copy:");
+            String secondFileName = input.next();
+            System.out.println(tasks.doTaskOne(firstFileName,secondFileName));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }*/
 
-        Pattern pattern = Pattern.compile("^[a-zA-Z]+=");
-        Pattern invalidFormat = Pattern.compile("([^\\w+\\-*/()^=])|([\\W&&[^()]]{2,})|(.*=.*=)");
-        Scanner in = new Scanner(System.in);
-        Calculator calculator = new Calculator();
-
-        while(true){
-            String input = in.nextLine();
-            try{
-                calculator.parseInput(input);
-            } catch (CalculationException ex){
-                System.out.println(ex.getMessage());
-            }
+        //Second task split
+        try{
+            System.out.println("Path of file to split:");
+            String firstFileName = input.nextLine();
+            System.out.println("Length in bytes of new files:");
+            long lengthOfNewFiles = input.nextLong();
+            tasks.doTaskTwoSplit(firstFileName,lengthOfNewFiles);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
-
     }
+
 }
