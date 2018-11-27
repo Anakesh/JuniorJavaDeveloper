@@ -8,7 +8,6 @@ public class Main {
         Tasks tasks = new Tasks();
         Scanner input = new Scanner(System.in);
         //First task
-        /*
         try{
             System.out.println("Path of file to copy:");
             String firstFileName = input.nextLine();
@@ -17,10 +16,10 @@ public class Main {
             System.out.println(tasks.doTaskOne(firstFileName,secondFileName));
         } catch (IOException e) {
             e.printStackTrace();
-        }*/
+        }
 
         //Second task split
-        try{
+         /*try{
             System.out.println("Path of file to split:");
             String firstFileName = input.nextLine();
             System.out.println("Length in bytes of new files:");
@@ -28,7 +27,7 @@ public class Main {
             tasks.doTaskTwoSplit(firstFileName,lengthOfNewFiles);
         } catch (IOException e) {
             e.printStackTrace();
-        }
+        }*/
 
     }
 
