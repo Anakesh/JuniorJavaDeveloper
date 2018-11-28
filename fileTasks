@@ -1,0 +1,317 @@
+public class Main {
+    public static void main(String[] args) {
+        Tasks tasks = new Tasks();
+        Scanner input = new Scanner(System.in);
+
+        //First task
+/*
+        try{
+            System.out.println("Path of file to copy:");
+            String firstFileName = input.nextLine();
+            System.out.println("Path of copy:");
+            String secondFileName = input.next();
+            System.out.println(tasks.doTaskOne(firstFileName,secondFileName));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+*/
+
+        //Second task split
+/*
+        try{
+            System.out.println("Path of file to split:");
+            String firstFileName = input.nextLine();
+            System.out.println("Length in bytes of new files:");
+            long lengthOfNewFiles = input.nextLong();
+            tasks.doTaskTwoSplit(firstFileName,lengthOfNewFiles);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+*/
+        //Second task combine
+/*
+        try{
+            System.out.println("Number of files to combine:");
+            int numOfFiles = Integer.parseInt(input.nextLine());
+            String[] filePaths = new String[numOfFiles];
+            for(int i = 0;i<numOfFiles;i++){
+                System.out.println("Enter path of file №"+(i+1));
+                filePaths[i] = input.nextLine();
+            }
+            System.out.println("Path of new file:");
+            String newFilePath = input.nextLine();
+            tasks.doTaskTwoCombine(filePaths,newFilePath);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+*/
+        //Third task XOR key encrypt/decrypt
+/*
+        try{
+            System.out.println("Path of file to encrypt/decrypt:");
+            String fileName = input.nextLine();
+            System.out.println("Enter your key:");
+            String key = input.nextLine();
+            tasks.doTaskThreeXorKey(fileName,key.getBytes());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+*/
+        //Third task XOR file encrypt/decrypt
+/*
+        try{
+            System.out.println("Path of file to encrypt/decrypt:");
+            String targetFileName = input.nextLine();
+            System.out.println("Path of key file:");
+            String keyFileName = input.nextLine();
+            tasks.doTaskThreeXorFile(targetFileName,keyFileName);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+*/
+        //Fourth task
+/*
+        try{
+            System.out.println("Path of file to get byte tree set:");
+            String fileName = input.nextLine();
+            TreeSet<Byte> byteTreeSet = tasks.doTaskFour(fileName);
+            System.out.println("Sorted bytes without repeat:");
+            System.out.println(byteTreeSet);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+*/
+        //Fifth task
+/*
+        try{
+            System.out.println("Path of file to get number of commas:");
+            String fileName = input.nextLine();
+            int numberOfCommas = tasks.doTaskFive(fileName);
+            System.out.println("Number of commas:");
+            System.out.println(numberOfCommas);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+*/
+
+        //Sixth task
+/*
+        try{
+            System.out.println("Path of file to split:");
+            String firstFileName = input.nextLine();
+            System.out.println("Percentage amount of data that will be written in one file:");
+            int percentage = input.nextInt();
+            tasks.doTaskSix(firstFileName,percentage);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+*/
+    }
+}
+
+public class Tasks {
+    public long doTaskOne(String firstFilePath, String secondFilePath) throws IOException {
+        File file1 = new File(firstFilePath);
+        File file2 = new File(secondFilePath);
+        FileHandler handler = new FileHandler();
+        if(file1.exists()){
+            handler.copyFile(file1,file2);
+            return file1.length();
+        }
+        else {
+            throw new IOException("First file doesn't exist");
+        }
+    }
+    public void doTaskTwoSplit(String filePath, long lengthOfNewFiles) throws IOException {
+        File file = new File(filePath);
+        FileHandler handler = new FileHandler();
+        if(file.exists()){
+            handler.splitFileByByteLength(file,lengthOfNewFiles);
+        }
+        else {
+            throw new IOException("File doesn't exist");
+        }
+    }
+    public void doTaskTwoCombine(String[] filePaths, String newFilePath) throws IOException {
+        File[] files = new File[filePaths.length];
+        FileHandler handler = new FileHandler();
+        for(int i = 0;i<files.length;i++) {
+            files[i] = new File(filePaths[i]);
+            if(!files[i].exists())
+                throw new IOException("File № "+(i+1)+" doesn't exist");
+        }
+        handler.combineFiles(files,newFilePath);
+    }
+    public void doTaskThreeXorKey(String filePath, byte[] key)throws IOException{
+        File file = new File(filePath);
+        String[] fileName = filePath.split("(\\.(?!(\\w+\\.\\w*)+))");
+        File newFile = new File(fileName[0]+ "_" +"keyXORed" +"."+  fileName[1]);
+        FileHandler handler = new FileHandler();
+        if(file.exists()){
+            handler.doXorWithKey(file,newFile,key);
+        }
+        else {
+            throw new IOException("File doesn't exist");
+        }
+    }
+    public void doTaskThreeXorFile(String targetFilePath, String keyFilePath)throws IOException{
+        File targetFile = new File(targetFilePath);
+        String[] fileName = targetFilePath.split("(\\.(?!(\\w+\\.\\w*)+))");
+        File keyFile = new File(keyFilePath);
+        File newFile = new File(fileName[0]+ "_" +"fileXORed" +"."+  fileName[1]);
+        FileHandler handler = new FileHandler();
+        if(targetFile.exists()&&keyFile.exists()&&keyFile.length()>0){
+            handler.doXorWithFile(targetFile,keyFile,newFile);
+        }
+        else {
+            throw new IOException("File doesn't exist");
+        }
+    }
+
+    public TreeSet<Byte> doTaskFour(String filePath) throws IOException {
+        File file = new File(filePath);
+        FileHandler handler = new FileHandler();
+        if(file.exists()){
+            return new TreeSet<>(handler.fileToByteList(file));
+        } else{
+            throw new IOException("File doesn't exist");
+        }
+    }
+    public int doTaskFive(String filePath) throws IOException {
+        File file = new File(filePath);
+        FileHandler handler = new FileHandler();
+        if(file.exists()){
+            List<Byte> byteList = handler.fileToByteList(file);
+            byte comma = '\u002C';
+            int numOfCommas = 0;
+            for(Byte b:byteList)
+                if(b.equals(comma))
+                    numOfCommas++;
+            return numOfCommas;
+        } else{
+            throw new IOException("File doesn't exist");
+        }
+    }
+    public void doTaskSix(String filePath, int percent) throws IOException {
+        File file = new File(filePath);
+        FileHandler handler = new FileHandler();
+        if(file.exists()||percent>100){
+            handler.splitFileByPercent(file,percent);
+        }
+        else if(!file.exists()){
+            throw new IOException("File doesn't exist");
+        }
+        else if(percent>100){
+            throw new IOException("Wrong percent value");
+        }
+    }
+}
+
+public class FileHandler {
+
+    public void copyFile(File sourceFile, File targetFile) throws IOException {
+        try(
+                InputStream sourceInStr = new FileInputStream(sourceFile);
+                BufferedInputStream sourceBufInStr = new BufferedInputStream(sourceInStr);
+                OutputStream targetOutStr = new FileOutputStream(targetFile);
+                BufferedOutputStream targetBufOutStr = new BufferedOutputStream(targetOutStr)
+                ){
+            int b;
+            while((b = sourceBufInStr.read())>-1){
+                targetBufOutStr.write(b);
+            }
+        }
+    }
+
+    public void splitFileByByteLength(File sourceFile, long lengthOfNewFiles) throws IOException {
+        int numOfFiles;
+        if (sourceFile.length() % lengthOfNewFiles == 0)
+            numOfFiles = (int) (sourceFile.length() / lengthOfNewFiles);
+        else
+            numOfFiles = (int) (sourceFile.length() / lengthOfNewFiles + 1);
+        MyBufferedOutputStream[] buffOutStreams = new MyBufferedOutputStream[numOfFiles];
+        String[] fileName = sourceFile.getName().split("(\\.(?!(\\w+\\.\\w*)+))");
+        for(int i = 0;i<buffOutStreams.length;i++) {
+            buffOutStreams[i] = new MyBufferedOutputStream(fileName[0]+ "_" +"part" + (i+1) +"."+  fileName[1]);
+        }
+        try(MyBufferedInputStream buffInStr = new MyBufferedInputStream(sourceFile)){
+            int currFileNum = 0;
+            long currFileLength = 0;
+            int b;
+            while((b=buffInStr.read())>0){
+                buffOutStreams[currFileNum].write(b);
+                currFileLength++;
+                if(currFileLength>=lengthOfNewFiles){
+                    currFileNum++;
+                    currFileLength = 0;
+                }
+            }
+        }
+        for (MyBufferedOutputStream buffOutStream : buffOutStreams)
+            buffOutStream.close();
+    }
+
+    public void splitFileByPercent(File file, double percent) throws IOException {
+        long fileLength = file.length();
+        if(fileLength%(100d/percent)>0)
+            this.splitFileByByteLength(file,(long)((fileLength/(100/percent))+1));
+        else
+            this.splitFileByByteLength(file,(long)(fileLength/(100/percent)));
+
+    }
+
+    public void combineFiles(File[] files, String newFilePath) throws IOException {
+        Vector<InputStream> inVector = new Vector<>();
+        for (File file : files)
+            inVector.add(new FileInputStream(file));
+        SequenceInputStream seqStream = new SequenceInputStream(inVector.elements());
+        try(MyBufferedOutputStream buffOutStr = new MyBufferedOutputStream(newFilePath)){
+            byte[] buf = new byte[1024];
+            int len;
+            while ((len = seqStream.read(buf)) > 0) {
+                buffOutStr.write(buf, 0, len);
+            }
+        }
+    }
+
+    public void doXorWithKey(File file, File newFile, byte[] key) throws IOException {
+        try(
+                MyBufferedInputStream bufInStr = new MyBufferedInputStream(file);
+                MyBufferedOutputStream bufOutStr = new MyBufferedOutputStream(newFile)
+                ){
+            byte b;
+            for(int i = 0;(b = (byte) bufInStr.read())>0;i++){
+                bufOutStr.write((int)b^key[i%key.length]);
+            }
+        }
+    }
+
+    public void doXorWithFile(File targetFile, File keyFile,File newFile) throws IOException{
+        try(
+                MyBufferedInputStream targetBufInStr = new MyBufferedInputStream(targetFile);
+                MyBufferedOutputStream bufOutStr = new MyBufferedOutputStream(newFile)
+                ){
+            MyBufferedInputStream keyBufInStr = new MyBufferedInputStream(keyFile);
+            byte targetByte;
+            byte keyByte;
+            while((targetByte = (byte)targetBufInStr.read())>0){
+                if((keyByte = (byte) keyBufInStr.read())<=0){
+                    keyBufInStr = new MyBufferedInputStream(keyFile);
+                    keyByte = (byte) keyBufInStr.read();
+                }
+                bufOutStr.write(targetByte^keyByte);
+            }
+            keyBufInStr.close();
+        }
+    }
+    public List<Byte> fileToByteList(File file) throws IOException {
+        try(MyBufferedInputStream bufInStr = new MyBufferedInputStream(file)){
+            byte b;
+            List<Byte> byteList = new ArrayList<>();
+            while((b=(byte)bufInStr.read())>0){
+                byteList.add(b);
+            }
+            return byteList;
+        }
+    }
+}
