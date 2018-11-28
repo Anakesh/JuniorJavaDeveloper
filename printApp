@@ -1,0 +1,243 @@
+public class Message implements Serializable {
+    private String messText;
+    private String sender;
+    public Message(String sender, String messText){
+        this.sender = sender;
+        this.messText = messText;
+    }
+
+    Set<String> str = new HashSet<>();
+    @Override
+    public String toString() {
+        return "Message:" + messText + " from: "+ sender;
+    }
+
+    public String getMessText() {
+        return messText;
+    }
+
+    public void setMessText(String messText) {
+        this.messText = messText;
+    }
+
+    public String getSender() {
+        return sender;
+    }
+
+    public void setSender(String sender) {
+        this.sender = sender;
+    }
+}
+
+public class PrintClient {
+    private SocketAddress socketAddress;
+    private Scanner scanner;
+    private Set<String> commands;
+
+    public PrintClient(SocketAddress address, Scanner scanner){
+        this.socketAddress = address;
+        this.scanner = scanner;
+        commands = new HashSet<>();
+        commands.add("/list_users");
+        commands.add("/server_time");
+        commands.add("/ping");
+    }
+
+    private void start(){
+        System.out.println("Enter your name");
+        String name = scanner.nextLine();
+
+        while(true){
+            System.out.println("Enter your message");
+            String msg = scanner.nextLine();
+
+            parseMessage(name, msg);
+        }
+    }
+
+    private void parseMessage(String name, String msgText) {
+        Pattern comPattern =  Pattern.compile("^/.*");
+        Matcher comMatcher = comPattern.matcher(msgText);
+        Message message = new Message(name,msgText);
+        try(Socket socket = new Socket()) {
+            socket.connect(socketAddress);
+            if (comMatcher.matches() && commands.contains(msgText)) {
+                try {
+                    doCommand(message,socket);
+                } catch (ClassNotFoundException e) {
+                    System.out.println("Сервер не отвечает");
+                } catch (IOException | InterruptedException e) {
+                    e.printStackTrace();
+                }
+            } else {
+                sendMessage(message,socket);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void doCommand(Message message, Socket socket) throws InterruptedException, IOException, ClassNotFoundException {
+        switch (message.getMessText()) {
+            case "/list_users":
+                Set<String> users = (Set<String>) sendCommand(message, socket);
+                System.out.println("Список пользователей заходивших на сервер:");
+                for (String user : users) {
+                    System.out.println(user);
+                }
+                break;
+            case "/server_time":
+                Date date = (Date) sendCommand(message,socket);
+                System.out.println("Время на сервере: " + date);
+                break;
+            case "/ping":
+                Date sendDate = new Date();
+                sendCommand(message,socket);
+                Date responseDate = new Date();
+                int ping = (int) (responseDate.getTime() - sendDate.getTime());
+                System.out.println("Пинг равен: " + ping+" мс");
+                break;
+        }
+    }
+
+
+    private Object sendCommand(Message message, Socket socket) throws IOException, InterruptedException, ClassNotFoundException {
+        try (
+                OutputStream out = socket.getOutputStream();
+                ObjectOutputStream objOut = new ObjectOutputStream(out);
+                InputStream in = socket.getInputStream();
+                ObjectInputStream objIn = new ObjectInputStream(in);
+        ) {
+            objOut.writeObject(message);
+            objOut.flush();
+            int i = 0;
+            while (objIn.available() <= 0) {
+                Thread.sleep(1);
+                i++;
+                if (i > 5000)
+                    break;
+            }
+            return objIn.readObject();
+        }
+    }
+
+
+    private void sendMessage(Message message, Socket socket) {
+        try (
+                OutputStream out = socket.getOutputStream();
+                ObjectOutputStream objOut = new ObjectOutputStream(out);
+        ) {
+            objOut.writeObject(message);
+            objOut.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    private static SocketAddress parseAddress(String address) {
+        String[] strings = address.split(":");
+        return new InetSocketAddress(strings[0],Integer.parseInt(strings[1]));
+    }
+
+    public static void main(String[] args) {
+
+        String address = null;
+        if(args!= null&&args.length>0){
+            address = args[0];
+        }
+        Scanner scanner = new Scanner(System.in);
+        if(address  == null){
+            System.out.println("Enter server IP and port");
+            address = scanner.nextLine();
+        }
+
+//        "127.0.0.1:8080"
+        PrintClient client = new PrintClient(
+                parseAddress(address),
+                scanner
+        );
+        client.start();
+    }
+}
+
+public class PrintServer {
+    private int port;
+    private Set<String> commands;
+    private Set<String> users;
+
+    public PrintServer(int port) {
+        this.port = port;
+        this.users = new HashSet<>();
+        commands = new HashSet<>();
+        commands.add("/list_users");
+        commands.add("/server_time");
+        commands.add("/ping");
+    }
+
+    public void start() {
+        try (ServerSocket serverSocket = new ServerSocket(port)) {
+            System.out.println("Server started on:" +
+                    serverSocket);
+            while (true) {
+                Socket socket = serverSocket.accept();
+                getMessage(socket);
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void getMessage(Socket socket) {
+        try (ObjectInputStream objIn = new ObjectInputStream(socket.getInputStream())) {
+             Object object = objIn.readObject();
+            handleMessage((Message) object,socket);
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void handleMessage(Message message,Socket socket) {
+        users.add(message.getSender());
+        printMessage(message);
+        if(commands.contains(message.getMessText()))
+            handleCommand(message.getMessText(),socket);
+
+    }
+
+    private void handleCommand(String messText,Socket socket) {
+        switch(messText){
+            case "/list_users":
+                sendResponse(users,socket);
+                break;
+            case "/server_time":
+                Date date = new Date();
+                sendResponse(date,socket);
+                break;
+            case "/ping":
+                Object object = new Object();
+                sendResponse(object,socket);
+                break;
+        }
+    }
+
+    public void sendResponse(Object object,Socket socket){
+        try (
+                ObjectOutputStream objOut = new ObjectOutputStream(socket.getOutputStream())) {
+            objOut.writeObject(object);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void printMessage(Message message) {
+        System.out.println(message);
+    }
+
+    public static void main(String[] args) {
+        int port = Integer.parseInt(args[0]);
+        PrintServer server = new PrintServer(port);
+        server.start();
+    }
+}
