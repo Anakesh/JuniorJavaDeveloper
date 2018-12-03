@@ -1,6 +1,6 @@
 package homework_4_29_10;
 
-import homework_4_29_10.FileHandler.FileHandler;
+import homework_4_29_10.FileHandler.FileFactory;
 import homework_4_29_10.MyList.MyList;
 
 public class Main {
@@ -26,9 +26,9 @@ public class Main {
         nodeMyList.set(0,9);
         System.out.println(nodeMyList);
 
-        FileHandler fileHandler = new FileHandler();
+        FileFactory fileHandler = new FileFactory();
         String filePath = "foo\\foo1\\foo2\\foo.txt";
-        System.out.println(fileHandler.readFile(filePath));
+        //System.out.println(fileHandler.readFile(filePath));
 
     }
 }
