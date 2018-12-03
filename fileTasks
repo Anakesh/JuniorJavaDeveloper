@@ -1,4 +1,4 @@
-public class Main {
+public class TasksMain {
     public static void main(String[] args) {
         Tasks tasks = new Tasks();
         Scanner input = new Scanner(System.in);
@@ -109,6 +109,53 @@ public class Main {
     }
 }
 
+public class MoreTasksMain {
+    public static void main(String[] args) {
+        MoreTasks moreTasks = new MoreTasks();
+        Scanner input = new Scanner(System.in);
+
+        //First task
+/*
+        try{
+            System.out.println("Path of file to filter:");
+            String fileName = input.nextLine();
+            System.out.println("Directory path for new file:");
+            String newDirectoryName = input.next();
+            System.out.println("Lower range to filter:");
+            int lowerRange = input.nextInt();
+            System.out.println("Higher range to filter");
+            int higherRange = input.nextInt();
+            moreTasks.doTaskOne(fileName,newDirectoryName,lowerRange,higherRange);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+*/
+        //Second task
+/*
+        try {
+            System.out.println("Directory path:");
+            String folder = input.nextLine();
+            moreTasks.doTaskTwo(folder);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+*/
+
+        //Third task
+
+        try {
+            System.out.println("Source directory path to copy from:");
+            String sourceFolder = input.nextLine();
+            System.out.println("Destination directory path to copy from:");
+            String destinationFolder = input.nextLine();
+            moreTasks.doTaskThree(sourceFolder, destinationFolder);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+}
+
 public class Tasks {
     public long doTaskOne(String firstFilePath, String secondFilePath) throws IOException {
         File file1 = new File(firstFilePath);
@@ -207,17 +254,57 @@ public class Tasks {
     }
 }
 
+public class MoreTasks {
+    public void doTaskOne(String filePath, String newDirectoryName, int lowerRange, int higherRange) throws IOException {
+        if (lowerRange > higherRange)
+            throw new IOException("Wrong range");
+        File file = new File(filePath);
+        if (file.exists()) {
+            Path newDirectoryPath = Paths.get(newDirectoryName);
+            if (!Files.exists(newDirectoryPath))
+                Files.createDirectories(newDirectoryPath);
+            String[] fileName = filePath.split("(\\.(?!(\\w+\\.\\w*)+))");
+            File newFile = new File(Paths.get(newDirectoryName, (fileName[0] + "_" + "filtered" + "." + fileName[1])).toString());
+            FileHandler handler = new FileHandler();
+            handler.filterByWordLength(file, newFile, lowerRange, higherRange);
+
+        } else throw new IOException("File doesn't exist");
+    }
+
+    public void doTaskTwo(String directoryPath) throws IOException {
+        File folder = new File(directoryPath);
+        if (folder.exists() && folder.isDirectory() && folder.listFiles() != null) {
+            Path path = Paths.get(folder.getAbsolutePath(), (folder.getName() + "_listOfFiles.txt"));
+            File file = new File(path.toString());
+            FileHandler handler = new FileHandler();
+            handler.writeDirectoryFilesInfo(folder, file);
+        } else throw new IOException("Folder doesn't exist or empty");
+    }
+
+    public void doTaskThree(String sourceFolderName, String destinationFolderName) throws IOException {
+        File sourceFolder = new File(sourceFolderName);
+        if (sourceFolder.exists() && sourceFolder.isDirectory() && sourceFolder.listFiles() != null) {
+            Path destinationFolderPath = Paths.get(destinationFolderName);
+            if (!Files.exists(destinationFolderPath))
+                Files.createDirectories(destinationFolderPath);
+            File destinationFolder = new File(destinationFolderName);
+            FileHandler handler = new FileHandler();
+            handler.copyAllFilesInDirectory(sourceFolder, destinationFolder);
+        } else throw new IOException("Folder doesn't exist or empty");
+    }
+}
+
 public class FileHandler {
 
     public void copyFile(File sourceFile, File targetFile) throws IOException {
-        try(
+        try (
                 InputStream sourceInStr = new FileInputStream(sourceFile);
                 BufferedInputStream sourceBufInStr = new BufferedInputStream(sourceInStr);
                 OutputStream targetOutStr = new FileOutputStream(targetFile);
                 BufferedOutputStream targetBufOutStr = new BufferedOutputStream(targetOutStr)
-                ){
+        ) {
             int b;
-            while((b = sourceBufInStr.read())>-1){
+            while ((b = sourceBufInStr.read()) > -1) {
                 targetBufOutStr.write(b);
             }
         }
@@ -231,17 +318,17 @@ public class FileHandler {
             numOfFiles = (int) (sourceFile.length() / lengthOfNewFiles + 1);
         MyBufferedOutputStream[] buffOutStreams = new MyBufferedOutputStream[numOfFiles];
         String[] fileName = sourceFile.getName().split("(\\.(?!(\\w+\\.\\w*)+))");
-        for(int i = 0;i<buffOutStreams.length;i++) {
-            buffOutStreams[i] = new MyBufferedOutputStream(fileName[0]+ "_" +"part" + (i+1) +"."+  fileName[1]);
+        for (int i = 0; i < buffOutStreams.length; i++) {
+            buffOutStreams[i] = new MyBufferedOutputStream(fileName[0] + "_" + "part" + (i + 1) + "." + fileName[1]);
         }
-        try(MyBufferedInputStream buffInStr = new MyBufferedInputStream(sourceFile)){
+        try (MyBufferedInputStream buffInStr = new MyBufferedInputStream(sourceFile)) {
             int currFileNum = 0;
             long currFileLength = 0;
             int b;
-            while((b=buffInStr.read())>0){
+            while ((b = buffInStr.read()) > 0) {
                 buffOutStreams[currFileNum].write(b);
                 currFileLength++;
-                if(currFileLength>=lengthOfNewFiles){
+                if (currFileLength >= lengthOfNewFiles) {
                     currFileNum++;
                     currFileLength = 0;
                 }
@@ -253,10 +340,10 @@ public class FileHandler {
 
     public void splitFileByPercent(File file, double percent) throws IOException {
         long fileLength = file.length();
-        if(fileLength%(100d/percent)>0)
-            this.splitFileByByteLength(file,(long)((fileLength/(100/percent))+1));
+        if (fileLength % (100d / percent) > 0)
+            this.splitFileByByteLength(file, (long) ((fileLength / (100 / percent)) + 1));
         else
-            this.splitFileByByteLength(file,(long)(fileLength/(100/percent)));
+            this.splitFileByByteLength(file, (long) (fileLength / (100 / percent)));
 
     }
 
@@ -265,7 +352,7 @@ public class FileHandler {
         for (File file : files)
             inVector.add(new FileInputStream(file));
         SequenceInputStream seqStream = new SequenceInputStream(inVector.elements());
-        try(MyBufferedOutputStream buffOutStr = new MyBufferedOutputStream(newFilePath)){
+        try (MyBufferedOutputStream buffOutStr = new MyBufferedOutputStream(newFilePath)) {
             byte[] buf = new byte[1024];
             int len;
             while ((len = seqStream.read(buf)) > 0) {
@@ -275,43 +362,90 @@ public class FileHandler {
     }
 
     public void doXorWithKey(File file, File newFile, byte[] key) throws IOException {
-        try(
+        try (
                 MyBufferedInputStream bufInStr = new MyBufferedInputStream(file);
                 MyBufferedOutputStream bufOutStr = new MyBufferedOutputStream(newFile)
-                ){
+        ) {
             byte b;
-            for(int i = 0;(b = (byte) bufInStr.read())>0;i++){
-                bufOutStr.write((int)b^key[i%key.length]);
+            for (int i = 0; (b = (byte) bufInStr.read()) > 0; i++) {
+                bufOutStr.write((int) b ^ key[i % key.length]);
             }
         }
     }
 
-    public void doXorWithFile(File targetFile, File keyFile,File newFile) throws IOException{
-        try(
+    public void doXorWithFile(File targetFile, File keyFile, File newFile) throws IOException {
+        try (
                 MyBufferedInputStream targetBufInStr = new MyBufferedInputStream(targetFile);
                 MyBufferedOutputStream bufOutStr = new MyBufferedOutputStream(newFile)
-                ){
+        ) {
             MyBufferedInputStream keyBufInStr = new MyBufferedInputStream(keyFile);
             byte targetByte;
             byte keyByte;
-            while((targetByte = (byte)targetBufInStr.read())>0){
-                if((keyByte = (byte) keyBufInStr.read())<=0){
+            while ((targetByte = (byte) targetBufInStr.read()) > 0) {
+                if ((keyByte = (byte) keyBufInStr.read()) <= 0) {
                     keyBufInStr = new MyBufferedInputStream(keyFile);
                     keyByte = (byte) keyBufInStr.read();
                 }
-                bufOutStr.write(targetByte^keyByte);
+                bufOutStr.write(targetByte ^ keyByte);
             }
             keyBufInStr.close();
         }
     }
+
     public List<Byte> fileToByteList(File file) throws IOException {
-        try(MyBufferedInputStream bufInStr = new MyBufferedInputStream(file)){
+        try (MyBufferedInputStream bufInStr = new MyBufferedInputStream(file)) {
             byte b;
             List<Byte> byteList = new ArrayList<>();
-            while((b=(byte)bufInStr.read())>0){
+            while ((b = (byte) bufInStr.read()) > 0) {
                 byteList.add(b);
             }
             return byteList;
         }
+    }
+
+    public void filterByWordLength(File targetFile, File newFile, int lowerRange, int higherRange) throws IOException {
+        try (
+                BufferedReader buffReader = new BufferedReader(new FileReader(targetFile));
+                BufferedWriter buffWriter = new BufferedWriter(new FileWriter(newFile))
+        ) {
+            String currentLine;
+            while ((currentLine = buffReader.readLine()) != null) {
+                String[] words = currentLine.trim().split("\\s+");
+                for (String word : words)
+                    if (word.length() < lowerRange || word.length() > higherRange)
+                        buffWriter.write(word+" ");
+                buffWriter.write("\n");
+            }
+        }
+    }
+    public void writeDirectoryFilesInfo(File folder, File file) throws IOException {
+        try(BufferedWriter buffWriter = new BufferedWriter(new FileWriter(file))){
+            for(File fileEntry:folder.listFiles()){
+                Path path = Paths.get(fileEntry.getAbsolutePath());
+                FileTime time = Files.readAttributes(path,BasicFileAttributes.class).creationTime();
+                buffWriter.write(path.toString()+'\t'+fileEntry.getName()+'\t'+time.toString()+'\n');
+            }
+        }
+    }
+    public void copyAllFilesInDirectory(File sourceFolder, File destinationFolder) throws IOException {
+        for(File file : sourceFolder.listFiles()){
+            File fileCopy = new File(Paths.get(destinationFolder.getAbsolutePath(),file.getName()).toString());
+            this.copyFile(file,fileCopy);
+        }
+    }
+}
+
+public class MyBufferedInputStream extends BufferedInputStream {
+    public MyBufferedInputStream(File file) throws FileNotFoundException {
+        super(new FileInputStream(file));
+    }
+}
+
+public class MyBufferedOutputStream extends BufferedOutputStream {
+    public MyBufferedOutputStream(File file) throws FileNotFoundException {
+        super(new FileOutputStream(file));
+    }
+    public MyBufferedOutputStream(String fileName) throws FileNotFoundException  {
+        super(new FileOutputStream(fileName));
     }
 }
