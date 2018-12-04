@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
+
 public class Message implements Serializable {
     private String messText;
     private String sender;
@@ -15,7 +16,8 @@ public class Message implements Serializable {
     Set<String> str = new HashSet<>();
     @Override
     public String toString() {
-        return "Message:" + messText + " from: "+ sender;
+
+        return "From '" + sender + "':"+ messText;
     }
 
     public String getMessText() {

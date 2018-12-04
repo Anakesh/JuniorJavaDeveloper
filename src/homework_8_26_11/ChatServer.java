@@ -1,42 +1,48 @@
 package homework_8_26_11;
 
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 
 public class ChatServer {
     private int port;
+    private final String name = "Server";
     private Set<String> commands;
     private Set<String> users;
-    private ObjectOutputStream out;
-    private ObjectInputStream in;
+    private IOConnection connection;
 
 
     public ChatServer(int port) {
         this.port = port;
         this.users = new HashSet<>();
-        commands = new HashSet<>();
-        commands.add("/list_users");
-        commands.add("/server_time");
-        commands.add("/ping");
+        commands = getCommands();
+    }
+    public Set<String> getCommands(){
+        Set<String> comms = new HashSet<>();
+        comms.add("/list_users");
+        comms.add("/server_time");
+        comms.add("/ping");
+        return comms;
     }
 
     public void start() {
         try (ServerSocket serverSocket = new ServerSocket(port)) {
-            System.out.println("Server started on:" +
+            ConsoleHelper.writeString("Server started on:" +
                     serverSocket);
             while (true) {
                 Socket socket = serverSocket.accept();
-                this.out = new ObjectOutputStream(socket.getOutputStream());
-                this.in = new ObjectInputStream(socket.getInputStream());
-                getMessage();
-                this.out.close();
-                this.in.close();
+                connection = new IOConnection(socket);
+                Message message = connection.receive();
+                ConsoleHelper.writeString(message.toString());
+                Message answer = handleMessage(message);
+                connection.send(answer);
+                connection.close();
             }
 
         } catch (IOException | ClassNotFoundException e) {
@@ -44,46 +50,40 @@ public class ChatServer {
         }
     }
 
-    private void getMessage() throws IOException, ClassNotFoundException {
-
-            Object object = in.readObject();
-            handleMessage((Message) object);
-    }
-
-    private void handleMessage(Message message) throws IOException {
+    private Message handleMessage(Message message) throws IOException {
+        Pattern comPattern = Pattern.compile("^/.*");
+        Matcher comMatcher = comPattern.matcher(message.getMessText());
         users.add(message.getSender());
-        printMessage(message);
-        if(commands.contains(message.getMessText()))
-            handleCommand(message.getMessText());
-        else
-            sendResponse("Message '"+message.getMessText()+"' has been received");
-
+        if (comMatcher.matches()) {
+            if (commands.contains(message.getMessText())) {
+                return doCommand(message.getMessText());
+            } else
+                return new Message(name, "\nНеизвестная команда");
+        } else
+            return new Message(name, "\nСервер получил следующее сообщение: '" + message.getMessText() + "'");
     }
 
-    private void handleCommand(String messText) throws IOException {
+    private Message doCommand(String messText) throws IOException {
+        Message message = null;
         switch(messText){
             case "/list_users":
-                sendResponse(users);
+                StringBuilder answer = new StringBuilder();
+                answer.append("\nСписок пользователей заходивших на сервер:\n");
+                for (String user : users) {
+                    answer.append(user).append('\n');
+                }
+                message = new Message(name,answer.toString());
                 break;
             case "/server_time":
-                Date date = new Date();
-                sendResponse(date);
+                Date currentDate = new Date();
+
+                message =  new Message(name,currentDate.toString());
                 break;
             case "/ping":
-                short s = 0;
-                sendResponse(s);
+                message = new Message(name,"");
                 break;
         }
-    }
-
-    public void sendResponse(Object object) throws IOException {
-
-            out.writeObject(object);
-            out.flush();
-    }
-
-    private void printMessage(Message message) {
-        System.out.println(message);
+        return message;
     }
 
     public static void main(String[] args) {

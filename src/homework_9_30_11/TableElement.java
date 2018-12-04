@@ -1,16 +1,28 @@
 package homework_9_30_11;
 
+/**
+ * Created by Pavel on 04.12.2018.
+ */
 public class TableElement implements Comparable<TableElement>{
     private int id;
     private String name;
     private double price;
     private int quantity;
 
-    public TableElement(int id, String name, double price, int quantity) {
-        this.id = id;
-        this.name = name;
-        this.price = price;
-        this.quantity = quantity;
+    public TableElement(int id, String name, double price, int quantity) throws TableException {
+        if(id<1_0000_0000) {
+            this.id = id;
+        } else throw new TableException("Id exceeds maximum value");
+        if(name.length()<=30) {
+            this.name = name;
+        } else throw new TableException("Name is too long");
+        if(price<100000) {
+            this.price = price;
+        } else throw new TableException("Price exceeds maximum value");
+        if(quantity<100000) {
+            this.quantity = quantity;
+        } else throw new TableException("Quantity exceeds maximum value");
+
     }
 
     public int getId() {
@@ -60,10 +72,10 @@ public class TableElement implements Comparable<TableElement>{
         fullId.append(strId);
 
         StringBuilder fullName = new StringBuilder();
+        fullName.append(name);
         for(int i = 0;i<(30-name.length());i++){
             fullName.append(" ");
         }
-        fullName.append(name);
 
         String strPrice = String.valueOf(price);
         StringBuilder fullPrice = new StringBuilder();
@@ -72,12 +84,12 @@ public class TableElement implements Comparable<TableElement>{
         }
         fullPrice.append(strPrice);
 
-        String strQuant = String.valueOf(quantity);
+        String strQuantity = String.valueOf(quantity);
         StringBuilder fullQuant = new StringBuilder();
-        for(int i = 0;i<(4-strQuant.length());i++){
+        for(int i = 0;i<(4-strQuantity.length());i++){
             fullQuant.append(0);
         }
-        fullQuant.append(strQuant);
+        fullQuant.append(strQuantity);
 
         return fullId.toString()+ " "+
                 fullName.toString() +" "+

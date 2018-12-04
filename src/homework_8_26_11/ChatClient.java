@@ -6,19 +6,15 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.Scanner;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class ChatClient {
     private SocketAddress socketAddress;
-    private Scanner scanner;
+    private IOConnection connection;
     private Set<String> commands;
 
-    public ChatClient(SocketAddress address, Scanner scanner){
+    public ChatClient(SocketAddress address){
         this.socketAddress = address;
-        this.scanner = scanner;
         commands = new HashSet<>();
         commands.add("/list_users");
         commands.add("/server_time");
@@ -26,82 +22,73 @@ public class ChatClient {
     }
 
     private void start(){
-        System.out.println("Enter your name");
-        String name = scanner.nextLine();
+        ConsoleHelper.writeString("Enter your name");
+        String name = ConsoleHelper.readString();
 
         while(true){
-            System.out.println("Enter your message");
-            String msg = scanner.nextLine();
-
-            parseMessage(name, msg);
-        }
-    }
-
-    private void parseMessage(String name, String msgText) {
-        Pattern comPattern =  Pattern.compile("^/.*");
-        Matcher comMatcher = comPattern.matcher(msgText);
-        Message message = new Message(name,msgText);
-        try(Socket socket = new Socket()) {
-            socket.connect(socketAddress);
-            if (comMatcher.matches() && commands.contains(msgText)) {
-                try {
-                    doCommand(message,socket);
-                } catch (ClassNotFoundException e) {
-                    System.out.println("Сервер не отвечает");
-                } catch (IOException | InterruptedException e) {
-                    e.printStackTrace();
-                }
-            } else {
-                System.out.println((String)sendMessage(message,socket));
+            ConsoleHelper.writeString("Enter your message");
+            String msg = ConsoleHelper.readString().trim();
+            Message message = new Message(name, msg);
+            try(Socket socket = new Socket()) {
+                socket.connect(socketAddress);
+                connection = new IOConnection(socket);
+                Message answer = parseMessage(message);
+                ConsoleHelper.writeString(answer.toString());
+                connection.close();
+            } catch (IOException e1) {
+                e1.printStackTrace();
+            } catch (ChatException e) {
+                ConsoleHelper.writeString(e.getMessage());
+                //e.printStackTrace();
             }
-        } catch (IOException | InterruptedException | ClassNotFoundException e) {
-            e.printStackTrace();
         }
     }
 
-    private void doCommand(Message message, Socket socket) throws InterruptedException, IOException, ClassNotFoundException {
+    private Message parseMessage(Message message) throws ChatException {
+        Message answer;
+        try {
+            if (commands.contains(message.getMessText())) {
+                answer = doCommand(message);
+            } else {
+                answer = sendMessage(message);
+            }
+        } catch (IOException e) {
+            throw new ChatException("Ошибка соединения", e);
+        } catch (ClassNotFoundException e) {
+            throw new ChatException("Сервер не отвечает", e);
+        }
+        return answer;
+    }
+
+    private Message doCommand(Message message) throws IOException, ClassNotFoundException, ChatException {
+        Message answer;
         switch (message.getMessText()) {
             case "/list_users":
-                Set<String> users = (Set<String>) sendMessage(message, socket);
-                System.out.println("Список пользователей заходивших на сервер:");
-                for (String user : users) {
-                    System.out.println(user);
-                }
+                answer = sendMessage(message);
                 break;
             case "/server_time":
-                Date date = (Date) sendMessage(message,socket);
-                System.out.println("Время на сервере: " + date);
+                answer = sendMessage(message);
                 break;
             case "/ping":
                 Date sendDate = new Date();
-                sendMessage(message,socket);
+                answer = sendMessage(message);
                 Date responseDate = new Date();
                 int ping = (int) (responseDate.getTime() - sendDate.getTime());
-                System.out.println("Пинг равен: " + ping+" мс");
+                answer.setMessText("\nПинг равен: " + ping + " мс");
                 break;
+            default:
+                throw new ChatException("Команда не найдена");
+
         }
+        return answer;
     }
 
 
-    private Object sendMessage(Message message, Socket socket) throws IOException, InterruptedException, ClassNotFoundException {
-        try (
-                ObjectOutputStream objOut = new ObjectOutputStream(socket.getOutputStream());
-                ObjectInputStream objIn = new ObjectInputStream(socket.getInputStream());
-        ) {
-            objOut.writeObject(message);
-            objOut.flush();
-//            int i = 0;
-//            while (objIn.available() <= 0) {
-//                Thread.sleep(1);
-//                i++;
-//                if (i > 5000)
-//                    break;
-//            }
-            return objIn.readObject();
-        }
+    private Message sendMessage(Message message) throws IOException, ClassNotFoundException {
+        connection.send(message);
+        Message answer = connection.receive();
+        return answer;
     }
-
-
 
 
 
@@ -116,18 +103,14 @@ public class ChatClient {
         if(args!= null&&args.length>0){
             address = args[0];
         }
-        Scanner scanner = new Scanner(System.in);
         if(address  == null){
-            System.out.println("Enter server IP and port");
-            //address = scanner.nextLine();
-            address = "127.0.0.1:8080";
+            ConsoleHelper.writeString("Enter server IP and port");
+            address = ConsoleHelper.readString();
         }
 
 //        "127.0.0.1:8080"
-        ChatClient client = new ChatClient(
-                parseAddress(address),
-                scanner
-        );
+        ChatClient client = new ChatClient(parseAddress(address));
         client.start();
     }
 }
+

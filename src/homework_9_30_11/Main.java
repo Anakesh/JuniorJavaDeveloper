@@ -1,8 +1,30 @@
 package homework_9_30_11;
 
+import java.io.IOException;
+import java.util.Scanner;
+
 public class Main {
     public static void main(String[] args) {
-        TableElement element = new TableElement(12345, "Барабанные палочки", 159.00,12);
-        System.out.println(element);
+        Scanner in = new Scanner(System.in);
+        System.out.println("Enter path to file with table:");
+        String filePath = in.nextLine();
+        try {
+            TableHandler tableHandler = new TableHandler(filePath);
+            while (true) {
+                System.out.println("Enter your command: ");
+                String command = in.nextLine();
+                if (command.equals("-stop"))
+                    break;
+                try {
+                    tableHandler.handleCommand(command);
+                } catch (IOException | TableException e) {
+                    System.out.println(e.getMessage());
+                }
+            }
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+//            e.printStackTrace();
+        }
     }
 }
+
