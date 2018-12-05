@@ -17,6 +17,8 @@ public class Main {
             System.out.println(calculator.parseInput("x-10.5"));
             System.out.println("x-10.5-y*0.5");
             System.out.println(calculator.parseInput("x-10.5-y*0.5"));
+            System.out.println("4.8+(3.1^2-3*(2+2.5))/(2^2+4-6.5)");
+            System.out.println(calculator.parseInput("4.8+(3.1^2-3*(2+2.5))/(2^2+4-6.5)"));
         } catch (CalculationException ex){
             System.out.println(ex.getMessage());
         }
@@ -32,3 +34,4 @@ public class Main {
         }
     }
 }
+
