@@ -17,6 +17,7 @@ public class TableHandler {
         file.createNewFile();
         this.file = file;
     }
+
     public void handleCommand(String command) throws TableException, IOException {
         Pattern commPattern = Pattern.compile("^-\\w");
         Matcher commMatcher = commPattern.matcher(command);

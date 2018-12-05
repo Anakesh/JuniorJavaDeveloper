@@ -1,4 +1,4 @@
-package randomTasks;
+package randomTasks.TxtFileParser;
 
 import randomTasks.TxtFileParser.TxtFileParser;
 import randomTasks.TxtFileParser.Word;
