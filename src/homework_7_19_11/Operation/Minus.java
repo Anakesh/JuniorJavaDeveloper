@@ -1,14 +1,13 @@
-package homework_7_19_11;
+package homework_7_19_11.Operation;
 
-public class Power implements IOperation {
-
+public class Minus implements IOperation {
     @Override
     public String getString() {
-        return "^";
+        return "-";
     }
 
     @Override
     public double execute(double firstElem, double secondElem) {
-        return Math.pow(firstElem,secondElem);
+        return firstElem-secondElem;
     }
 }

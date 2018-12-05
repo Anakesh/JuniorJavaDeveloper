@@ -12,6 +12,6 @@ public class CleaningDecorator extends ServiceDecorator {
 
     @Override
     public String getDescription() {
-        return super.getDescription()+" and wash";
+        return super.getDescription()+" and cleaning";
     }
 }

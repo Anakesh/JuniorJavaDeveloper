@@ -148,8 +148,10 @@ public class FileHandler {
 
     public void copyAllFilesInDirectory(File sourceFolder, File destinationFolder) throws IOException {
         for (File file : sourceFolder.listFiles()) {
-            File fileCopy = new File(Paths.get(destinationFolder.getAbsolutePath(), file.getName()).toString());
-            this.copyFile(file, fileCopy);
+            if(!file.isDirectory()){
+                File fileCopy = new File(Paths.get(destinationFolder.getAbsolutePath(), file.getName()).toString());
+                this.copyFile(file, fileCopy);
+            }
         }
     }
 }

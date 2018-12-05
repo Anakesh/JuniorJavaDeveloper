@@ -1,14 +1,14 @@
-package homework_7_19_11;
+package homework_7_19_11.Operation;
 
-public class Plus implements IOperation {
+public class Division implements IOperation {
 
     @Override
     public String getString() {
-        return "+";
+        return "/";
     }
 
     @Override
     public double execute(double firstElem, double secondElem) {
-        return firstElem+secondElem;
+        return firstElem/secondElem;
     }
 }
