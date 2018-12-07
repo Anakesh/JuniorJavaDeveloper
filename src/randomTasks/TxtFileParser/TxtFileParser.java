@@ -1,7 +1,5 @@
 package randomTasks.TxtFileParser;
 
-import homework_4_29_10.MyList.MyList;
-
 import java.io.FileReader;
 import java.util.*;
 

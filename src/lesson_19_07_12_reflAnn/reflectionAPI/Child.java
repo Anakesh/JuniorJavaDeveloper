@@ -4,8 +4,6 @@ package lesson_19_07_12_reflAnn.reflectionAPI;
 // reflection API
 
 
-import lesson_9_07_11.Pair.Pair;
-
 public class Child extends Parent{
 
     private String name;
