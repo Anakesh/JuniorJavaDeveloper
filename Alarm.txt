@@ -1,0 +1,147 @@
+public class Main {
+    public static void main(String[] args) {
+
+        System.out.println(Double.parseDouble("-5.5"));
+
+        IAlarm red = new RedAlarm();
+        IAlarm green = new GreenAlarm();
+        IAlarm yellow = new YellowAlarm();
+
+        Sensor sensor = new Sensor();
+        sensor.addAlarm(red).addAlarm(green).addAlarm(yellow);
+
+        int j = 50;
+        for(int i= 0;j!=-50||i>=0;i+=j){
+            System.out.print("Current temperature: "+i+'\t');
+            sensor.newTemperature(i);
+            System.out.println();
+            if(i>=700) {
+                sensor.deleteAlarm(red);
+                j = -50;
+            }
+        }
+        sensor.deleteAlarm(green);
+        sensor.deleteAlarm(yellow);
+    }
+}
+
+public class Sensor {
+    private List<IAlarm> alarms = new ArrayList<>();
+
+    public Sensor addAlarm(IAlarm alarm){
+        this.alarms.add(alarm);
+        return this;
+    }
+
+    public Sensor deleteAlarm(IAlarm alarm){
+        this.alarms.remove(alarm);
+        alarm.shutdown();
+        return this;
+    }
+
+    public void newTemperature(int temperature){
+        this.checkAlarms(temperature);
+    }
+
+    private void checkAlarms(int temp){
+        for(IAlarm alarm :alarms){
+            alarm.tempChanged(temp);
+        }
+    }
+}
+
+public class RedAlarm implements IAlarm {
+
+    private boolean isActive = false;
+    private int activationTemp = 600;
+
+    private void setActive(boolean active) {
+        isActive = active;
+        System.out.print(isActive ? "Red alarm activated" : "Red alarm deactivated");
+    }
+
+    @Override
+    public void shutdown() {
+        if(isActive){
+            isActive = false;
+            System.out.println("Red alarm shutdown and deactivated");
+        } else{
+            System.out.println("Red alarm shutdown");
+        }
+    }
+
+    @Override
+    public void tempChanged(int temp) {
+        if (temp >= activationTemp) {
+            if (!this.isActive)
+                setActive(true);
+        } else if (this.isActive)
+            setActive(false);
+    }
+}
+
+public class GreenAlarm implements IAlarm {
+    private boolean isActive = false;
+    private int activationTemp = 100;
+
+    private void setActive(boolean active) {
+        isActive = active;
+        System.out.print(isActive ? "Green alarm activated" : "Green alarm deactivated");
+    }
+
+    @Override
+    public void shutdown() {
+        if(isActive){
+            isActive = false;
+            System.out.println("Green alarm shutdown and deactivated");
+        } else{
+            System.out.println("Green alarm shutdown");
+        }
+
+    }
+
+    @Override
+    public void tempChanged(int temp) {
+        if (temp >= activationTemp) {
+            if (!this.isActive)
+                setActive(true);
+        } else if (this.isActive)
+            setActive(false);
+    }
+}
+
+public class YellowAlarm implements IAlarm {
+    private boolean isActive = false;
+    private int activationTemp = 300;
+
+    private void setActive(boolean active) {
+        isActive = active;
+        System.out.print(isActive ? "Yellow alarm activated" : "Yellow alarm deactivated");
+    }
+
+    @Override
+    public void shutdown() {
+        if(isActive){
+            isActive = false;
+            System.out.println("Yellow alarm shutdown and deactivated");
+        } else{
+            System.out.println("Yellow alarm shutdown");
+        }
+
+    }
+
+
+    @Override
+    public void tempChanged(int temp) {
+        if (temp >= activationTemp) {
+            if (!this.isActive)
+                setActive(true);
+        } else if (this.isActive)
+            setActive(false);
+    }
+}
+
+public interface IAlarm {
+    void tempChanged(int temp);
+    void shutdown();
+}
