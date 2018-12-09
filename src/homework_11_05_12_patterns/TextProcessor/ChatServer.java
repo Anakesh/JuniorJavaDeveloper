@@ -169,6 +169,11 @@ public class ChatServer {
         return commands;
     }
 
+
+    public Map<String, CommandHistory> getUsersCommandHistory() {
+        return usersCommandHistory;
+    }
+
     public static void main(String[] args) {
         int port = Integer.parseInt(args[0]);
 

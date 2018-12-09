@@ -36,6 +36,7 @@ public class CancelCommand extends Command {
                 }
                 server.writeFile(messages);
                 sendAnswer(userName, "\nLast message successfully deleted from file.");
+                server.getUsersCommandHistory().get(userName).deleteLast(server.getCommands().get("/process"));
                 return true;
             } else {
                 sendAnswer(userName, "\nUnexpected error.");
