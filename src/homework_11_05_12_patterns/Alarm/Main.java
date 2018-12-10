@@ -18,12 +18,18 @@ public class Main {
             sensor.newTemperature(i);
             System.out.println();
             if(i>=700) {
-                sensor.deleteAlarm(red);
                 j = -50;
             }
         }
-        sensor.deleteAlarm(green);
-        sensor.deleteAlarm(yellow);
+        j=50;
+        for(int i= 0;j!=-50||i>=0;i+=j){
+            System.out.print("Current temperature: "+i+'\t');
+            sensor.newTemperature(i);
+            System.out.println();
+            if(i>=700) {
+                j = -50;
+            }
+        }
     }
 }
 

@@ -14,10 +14,8 @@ public class FileHandler {
 
     public void copyFile(File sourceFile, File targetFile) throws IOException {
         try (
-                InputStream sourceInStr = new FileInputStream(sourceFile);
-                BufferedInputStream sourceBufInStr = new BufferedInputStream(sourceInStr);
-                OutputStream targetOutStr = new FileOutputStream(targetFile);
-                BufferedOutputStream targetBufOutStr = new BufferedOutputStream(targetOutStr)
+                BufferedInputStream sourceBufInStr = getBuffInStr(sourceFile);
+                BufferedOutputStream targetBufOutStr = getBuffOutStr(targetFile);
         ) {
             int b;
             while ((b = sourceBufInStr.read()) > -1) {
@@ -32,12 +30,12 @@ public class FileHandler {
             numOfFiles = (int) (sourceFile.length() / lengthOfNewFiles);
         else
             numOfFiles = (int) (sourceFile.length() / lengthOfNewFiles + 1);
-        MyBufferedOutputStream[] buffOutStreams = new MyBufferedOutputStream[numOfFiles];
+        BufferedOutputStream[] buffOutStreams = new BufferedOutputStream[numOfFiles];
         String[] fileName = sourceFile.getName().split("(\\.(?!(\\w+\\.\\w*)+))");
         for (int i = 0; i < buffOutStreams.length; i++) {
-            buffOutStreams[i] = new MyBufferedOutputStream(fileName[0] + "_" + "part" + (i + 1) + "." + fileName[1]);
+            buffOutStreams[i] = getBuffOutStr(new File(fileName[0] + "_" + "part" + (i + 1) + "." + fileName[1]));
         }
-        try (MyBufferedInputStream buffInStr = new MyBufferedInputStream(sourceFile)) {
+        try (BufferedInputStream buffInStr = getBuffInStr(sourceFile)) {
             int currFileNum = 0;
             long currFileLength = 0;
             int b;
@@ -50,7 +48,7 @@ public class FileHandler {
                 }
             }
         }
-        for (MyBufferedOutputStream buffOutStream : buffOutStreams)
+        for (BufferedOutputStream buffOutStream : buffOutStreams)
             buffOutStream.close();
     }
 
@@ -68,7 +66,7 @@ public class FileHandler {
         for (File file : files)
             inVector.add(new FileInputStream(file));
         SequenceInputStream seqStream = new SequenceInputStream(inVector.elements());
-        try (MyBufferedOutputStream buffOutStr = new MyBufferedOutputStream(newFilePath)) {
+        try (BufferedOutputStream buffOutStr = getBuffOutStr(new File(newFilePath))) {
             byte[] buf = new byte[1024];
             int len;
             while ((len = seqStream.read(buf)) > -1) {
@@ -79,8 +77,8 @@ public class FileHandler {
 
     public void doXorWithKey(File file, File newFile, byte[] key) throws IOException {
         try (
-                MyBufferedInputStream bufInStr = new MyBufferedInputStream(file);
-                MyBufferedOutputStream bufOutStr = new MyBufferedOutputStream(newFile)
+                BufferedInputStream bufInStr = getBuffInStr(file);
+                BufferedOutputStream bufOutStr = getBuffOutStr(newFile)
         ) {
             byte b;
             for (int i = 0; (b = (byte) bufInStr.read()) > -1; i++) {
@@ -91,15 +89,15 @@ public class FileHandler {
 
     public void doXorWithFile(File targetFile, File keyFile, File newFile) throws IOException {
         try (
-                MyBufferedInputStream targetBufInStr = new MyBufferedInputStream(targetFile);
-                MyBufferedOutputStream bufOutStr = new MyBufferedOutputStream(newFile)
+                BufferedInputStream targetBufInStr = getBuffInStr(targetFile);
+                BufferedOutputStream bufOutStr = getBuffOutStr(newFile)
         ) {
-            MyBufferedInputStream keyBufInStr = new MyBufferedInputStream(keyFile);
+            BufferedInputStream keyBufInStr = getBuffInStr(keyFile);
             byte targetByte;
             byte keyByte;
             while ((targetByte = (byte) targetBufInStr.read()) > -1) {
                 if ((keyByte = (byte) keyBufInStr.read()) <= 0) {
-                    keyBufInStr = new MyBufferedInputStream(keyFile);
+                    keyBufInStr = getBuffInStr(keyFile);
                     keyByte = (byte) keyBufInStr.read();
                 }
                 bufOutStr.write(targetByte ^ keyByte);
@@ -109,7 +107,7 @@ public class FileHandler {
     }
 
     public List<Byte> fileToByteList(File file) throws IOException {
-        try (MyBufferedInputStream bufInStr = new MyBufferedInputStream(file)) {
+        try (BufferedInputStream bufInStr = getBuffInStr(file)) {
             byte b;
             List<Byte> byteList = new ArrayList<>();
             while ((b = (byte) bufInStr.read()) > -1) {
@@ -153,5 +151,12 @@ public class FileHandler {
                 this.copyFile(file, fileCopy);
             }
         }
+    }
+
+    private BufferedInputStream getBuffInStr(File file) throws FileNotFoundException {
+        return new BufferedInputStream(new FileInputStream(file));
+    }
+    private BufferedOutputStream getBuffOutStr(File file) throws FileNotFoundException {
+        return new BufferedOutputStream(new FileOutputStream(file));
     }
 }

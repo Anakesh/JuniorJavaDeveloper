@@ -18,8 +18,8 @@ public class DIContexMain {
     }
 }
 
-class DIContext {
-    private Class objectClass;
+class DIContext<T> {
+    private Class<?> objectClass;
 
     public DIContext(String className) throws ClassNotFoundException {
         this.objectClass = Class.forName(className);
@@ -32,8 +32,15 @@ class DIContext {
         Field[] objectFields = objectClass.getDeclaredFields();
         for (Field field : objectFields) {
             field.setAccessible(true);
+
             if (field.isAnnotationPresent(Resource.class)) {
-                DIContext fieldValue = new DIContext(field.getType().getName());
+                Class fieldResourceClass = field.getAnnotation(Resource.class).type();
+                DIContext fieldValue;
+                if(fieldResourceClass.equals(Object.class)){
+                    fieldValue = new DIContext(field.getType().getName());
+                }else{
+                    fieldValue = new DIContext(fieldResourceClass.getName());
+                }
                 field.set(object, fieldValue.get());
             }
         }

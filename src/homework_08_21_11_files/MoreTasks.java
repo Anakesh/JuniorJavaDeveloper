@@ -7,6 +7,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class MoreTasks {
+    private FileHandler handler = new FileHandler();
     public void doTaskOne(String filePath, String newDirectoryName, int lowerRange, int higherRange) throws IOException {
         if (lowerRange > higherRange)
             throw new IOException("Wrong range");
@@ -17,7 +18,6 @@ public class MoreTasks {
                 Files.createDirectories(newDirectoryPath);
             String[] fileName = filePath.split("(\\.(?!(\\w+\\.\\w*)+))");
             File newFile = new File(Paths.get(newDirectoryName, (fileName[0] + "_" + "filtered" + "." + fileName[1])).toString());
-            FileHandler handler = new FileHandler();
             handler.filterByWordLength(file, newFile, lowerRange, higherRange);
 
         } else throw new IOException("File doesn't exist");
@@ -28,7 +28,6 @@ public class MoreTasks {
         if (folder.exists() && folder.isDirectory() && folder.listFiles() != null) {
             Path path = Paths.get(folder.getAbsolutePath(), (folder.getName() + "_listOfFiles.txt"));
             File file = new File(path.toString());
-            FileHandler handler = new FileHandler();
             handler.writeDirectoryFilesInfo(folder, file);
         } else throw new IOException("Folder doesn't exist or empty");
     }
@@ -40,7 +39,6 @@ public class MoreTasks {
             if (!Files.exists(destinationFolderPath))
                 Files.createDirectories(destinationFolderPath);
             File destinationFolder = new File(destinationFolderName);
-            FileHandler handler = new FileHandler();
             handler.copyAllFilesInDirectory(sourceFolder, destinationFolder);
         } else throw new IOException("Folder doesn't exist or empty");
     }

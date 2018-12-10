@@ -1,12 +1,13 @@
 package chat;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.SocketAddress;
 
-public class IOConnection {
+public class IOConnection implements Closeable {
     private Socket socket;
     private ObjectOutputStream out;
     private ObjectInputStream in;
@@ -31,9 +32,8 @@ public class IOConnection {
     }
 
     @Override
-    protected void finalize() throws Throwable {
-        super.finalize();
-        out.close();
+    public void close() throws IOException {
         in.close();
+        out.close();
     }
 }
