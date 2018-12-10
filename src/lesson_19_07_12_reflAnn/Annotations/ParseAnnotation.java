@@ -16,7 +16,7 @@ public class ParseAnnotation {
 
 //Написать рефлексивный toString
 
-//написать небольщой Dependency Injection Framework
+//  написать небольщой Dependency Injection Framework
 //Всю логику можно собрать в одном классе DIContext
 //благодаря которому можно создавать экземпляр любого класса
 //с автомотически установленными зависимостями

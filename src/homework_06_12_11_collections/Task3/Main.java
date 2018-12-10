@@ -18,7 +18,7 @@ public class Main {
             list.add(input.nextLine());
         }
 
-        AnotherListClaa<String> anotherListClaa = new AnotherListClaa<>(list);
+        AnotherListClass<String> anotherListClaa = new AnotherListClass<>(list);
         anotherListClaa.doubleValue();
         anotherListClaa.printList();
     }

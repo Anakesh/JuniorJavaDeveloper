@@ -3,10 +3,10 @@ package homework_06_12_11_collections.Task3;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AnotherListClaa<T> {
+public class AnotherListClass<T> {
     private List<T> list;
 
-    public AnotherListClaa(List<T> list) {
+    public AnotherListClass(List<T> list) {
         this.list = list;
     }
     public void doubleValue(){
