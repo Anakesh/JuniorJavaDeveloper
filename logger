@@ -1,0 +1,60 @@
+public class Main {
+    public static void main(String[] args) {
+        LoggerContext loggerContext = new LoggerContext();
+        loggerContext.setLogger(new ConsoleLogger());
+        loggerContext.write("Console log");
+        loggerContext.setLogger(new FileLogger());
+        loggerContext.write("File log");
+        loggerContext.setLogger(new TimeFileLogger());
+        loggerContext.write("Time file log");
+    }
+}
+
+public class LoggerContext {
+    private ILogger logger;
+    public LoggerContext(){}
+    public LoggerContext(ILogger logger){
+        this.logger = logger;
+    }
+
+    public void setLogger(ILogger logger) {
+        this.logger = logger;
+    }
+
+    public void write(String info){
+        logger.write(info);
+    }
+}
+
+public class TimeFileLogger implements ILogger {
+    @Override
+    public void write(String info) {
+        Date date = new Date();
+        info += ", Time: "+ date.toString();
+        FileLogger fileLogger = new FileLogger();
+        fileLogger.write(info);
+    }
+}
+
+public class FileLogger implements ILogger {
+    @Override
+    public void write(String info) {
+        try(BufferedWriter writer = new BufferedWriter(new FileWriter("log.log",true))){
+            writer.write("Log info: "+ info);
+            writer.newLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+public class ConsoleLogger implements ILogger {
+    @Override
+    public void write(String info) {
+        System.out.println(info);
+    }
+}
+
+public interface ILogger {
+    void write(String info);
+}
