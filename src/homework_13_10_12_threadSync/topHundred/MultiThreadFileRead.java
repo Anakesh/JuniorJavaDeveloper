@@ -21,7 +21,7 @@ public class MultiThreadFileRead {
                 threads[i] = new FileReadThread(file,i*partLength,partLength);
             }
             for (FileReadThread thread:threads){
-                thread.run();
+                thread.start();
             }
             for (FileReadThread thread:threads){
                 try {
