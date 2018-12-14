@@ -73,7 +73,7 @@ public class ReflectionMethods {
         Field[] objectFields = objectClass.getDeclaredFields();
         for(Field field : objectFields){
             field.setAccessible(true);
-            if(field.isAnnotationPresent(Exclude.class)){
+            if(!field.isAnnotationPresent(Exclude.class)){
                 try {
                     Object fieldObject = field.get(o);
                     output.append("\n").append(tabulation).append('\t').append("Name:'").append(field.getName()).append("', ")
