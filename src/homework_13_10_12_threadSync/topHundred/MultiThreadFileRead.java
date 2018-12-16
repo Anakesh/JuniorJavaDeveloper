@@ -3,8 +3,6 @@ package homework_13_10_12_threadSync.topHundred;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class MultiThreadFileRead {
     private Map<String,Integer> allWordMap;
@@ -35,11 +33,10 @@ public class MultiThreadFileRead {
                 addWordsFromMap(thread.getWordMap());
             }
             topHundred = new LinkedHashMap<>();
-            List<Integer> list = new ArrayList<>();
-            Stream<Map.Entry<String,Integer>> stream = allWordMap.entrySet().stream().sorted(Map.Entry.comparingByValue(Comparator.reverseOrder())).limit(100);
-            stream.forEach(e->topHundred.put(e.getKey(),e.getValue()));
-//            stream.forEach(e->list.add(e.getValue()));
-//            System.out.println();
+
+            allWordMap.entrySet().stream()
+                    .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder())).limit(100)
+                    .forEach(e->topHundred.put(e.getKey(),e.getValue()));
         } else
             throw new FileNotFoundException();
     }

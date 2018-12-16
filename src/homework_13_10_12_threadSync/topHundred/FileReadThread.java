@@ -36,7 +36,8 @@ public class FileReadThread extends Thread {
             try(BufferedReader bis = new BufferedReader(new FileReader(raf.getFD()))){
                 String line;
                 while((line = bis.readLine())!=null&&raf.getFilePointer()<(startPos+length)){
-                    String[] words = line.toLowerCase().replaceAll("'","").replaceAll("[\\W\\d]"," ").split("\\s+");
+                    String[] words = line.toLowerCase().replaceAll("'","")
+                            .replaceAll("[\\W\\d]"," ").split("\\s+");
                     for(String word:words){
                         if(!word.equals("")) {
                             Integer num = wordMap.get(word);
