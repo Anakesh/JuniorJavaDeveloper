@@ -86,8 +86,11 @@ public class Main {
             tasks[i] = pool.submit(new Thread(task));
         }
 
-        Future futureTask = pool.submit(new Thread(task));
+        pool.submit(new Thread(task));
+
         Future futureTask2 = pool.submit(new Thread(task));
+        System.out.println(futureTask2);
+
 
         //метод submit возвращает объект Future
         //соотв ему доступны все его методы
@@ -129,7 +132,6 @@ public class Main {
         for(int i =0;i<messages.length;i++){
             messages[i] = exchanger.exchange(messages[i]); //обмен объектами отправляемкущий message[4] и записываем полученное в message[4]
         }
-
     }
 }
 
