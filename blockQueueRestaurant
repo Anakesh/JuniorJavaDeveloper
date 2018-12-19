@@ -1,0 +1,143 @@
+public class Main {
+    public static void main(String[] args) {
+        Restaurant restaurant = Restaurant.getInstance();
+        Scanner in = new Scanner(System.in);
+        System.out.println("Enter ur order");
+        String order = in.nextLine();
+        String answer = restaurant.doOrder(order);
+        System.out.println(answer);
+    }
+}
+
+public class Restaurant {
+    private static Restaurant instance;
+    private BlockingQueue<Order> newOrders;
+    private BlockingQueue<Order> processedOrders;
+    private BlockingQueue<Order> doneOrders;
+    private List<Thread> waiterList;
+    private List<Thread> cookList;
+    private static boolean closed = true;
+
+    private Restaurant(){
+        newOrders = new LinkedBlockingQueue<>();
+        processedOrders = new LinkedBlockingQueue<>();
+        doneOrders = new LinkedBlockingQueue<>();
+        waiterList = new ArrayList<>();
+        cookList = new ArrayList<>();
+        closed = false;
+        int numOfThreads = Runtime.getRuntime().availableProcessors();
+        int numOfCooks = (numOfThreads%2!=0)?numOfThreads/2+1:numOfThreads/2;
+        int numOfWaiters = (numOfCooks==numOfThreads)?1:numOfThreads-numOfCooks;
+        for(int i = 0;i<numOfCooks;i++){
+            Cook cook = new Cook(processedOrders,doneOrders);
+            Thread cookThread = new Thread(cook);
+            cookThread.start();
+            cookList.add(cookThread);
+        }
+        for(int i = 0;i<numOfWaiters;i++) {
+            Waiter waiter = new Waiter(newOrders, processedOrders);
+            Thread waiterThread = new Thread(waiter);
+            waiterThread.start();
+            waiterList.add(waiterThread);
+        }
+    }
+
+    public static Restaurant getInstance(){
+        if(instance==null)
+            instance = new Restaurant();
+        return instance;
+    }
+
+    public String doOrder(String stringOrder){
+        if(closed)
+            return "Restaurant is closed";
+        Order order = new Order(stringOrder);
+        try {
+            newOrders.put(order);
+            while(doneOrders.peek()!=order){
+                order.wait();
+            }
+            doneOrders.take();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return order.getOrderText();
+    }
+
+    public static void close(){
+        closed = true;
+        while(!Restaurant.getInstance().newOrders.isEmpty()
+                &&!Restaurant.getInstance().processedOrders.isEmpty()
+                &&!Restaurant.getInstance().doneOrders.isEmpty());
+        for(Thread cookThread:Restaurant.getInstance().cookList)
+            cookThread.interrupt();
+        for(Thread waiterThread:Restaurant.getInstance().waiterList)
+            waiterThread.interrupt();
+    }
+}
+
+public class Waiter extends Thread {
+    private BlockingQueue<Order> newOrders;
+    private BlockingQueue<Order> processedOrders;
+
+    public Waiter(BlockingQueue<Order> newOrders, BlockingQueue<Order> processedOrders) {
+        this.newOrders = newOrders;
+        this.processedOrders = processedOrders;
+    }
+
+    @Override
+    public void run() {
+        while(!Thread.currentThread().isInterrupted()){
+            try {
+                processedOrders.put(newOrders.take());
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                e.printStackTrace();
+            }
+        }
+
+    }
+}
+
+public class Order {
+    private String orderText;
+
+    public Order(String orderText) {
+        this.orderText = orderText;
+    }
+
+    public String getOrderText() {
+        return orderText;
+    }
+
+    public void setOrderText(String orderText) {
+        this.orderText = orderText;
+    }
+}
+
+public class Cook extends Thread{
+    private BlockingQueue<Order> processedOrders;
+    private BlockingQueue<Order> doneOrders;
+
+    public Cook(BlockingQueue<Order> processedOrders, BlockingQueue<Order> doneOrders) {
+        this.processedOrders = processedOrders;
+        this.doneOrders = doneOrders;
+    }
+
+    @Override
+    public void run() {
+        while(!Thread.currentThread().isInterrupted()){
+            try {
+                Order order = processedOrders.take();
+                order.setOrderText("Your order: '"+order.getOrderText()+"' is done");
+                doneOrders.put(order);
+                order.notify();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                e.printStackTrace();
+            }
+        }
+
+    }
+}
+
