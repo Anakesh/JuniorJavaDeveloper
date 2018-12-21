@@ -1,0 +1,151 @@
+public class Main {
+    public static void main(String[] args) throws BankException, ExecutionException, InterruptedException {
+        Bank bank = new Bank();
+        User user1 = bank.createUser("email1");
+        Account account1 = bank.createAccount(user1);
+        account1.setMoneyAmount(500);
+        User user2 = bank.createUser("email2");
+        Account account2 = bank.createAccount(user2);
+        account2.setMoneyAmount(1000);
+
+        System.out.println(account1);
+        System.out.println(account2);
+        System.out.println("Transfer 250 from 1 to 2");
+        System.out.println(bank.transferMoney(account1,account2,250));
+        System.out.println(account1);
+        System.out.println(account2);
+        System.out.println("Transfer 500 from 1 to 2");
+        System.out.println(bank.transferMoney(account1,account2,500));
+        System.out.println("Transfer 100 from 1 to 1");
+        System.out.println(bank.transferMoney(account1,account1,100));
+        System.out.println("Transfer -100 from 1 to 2");
+        System.out.println(bank.transferMoney(account1,account2,-100));
+    }
+}
+
+public class Bank {
+    ConcurrentSkipListSet<Account> accounts = new ConcurrentSkipListSet<>();
+    ConcurrentSkipListSet<User> users = new ConcurrentSkipListSet<>();
+
+    public User createUser(String email) throws BankException {
+        if(users.stream().noneMatch(user -> user.getEmail().equals(email))){
+            User user = new User(users.isEmpty()? 0:users.last().getId()+1,email);
+            users.add(user);
+            return user;
+        }
+        else
+            throw new BankException("There are already an user with this email");
+    }
+
+    public Account createAccount(User user){
+        Account account = new Account(accounts.isEmpty()?0:accounts.last().getId()+1, user.getId());
+        accounts.add(account);
+        return account;
+    }
+
+    public String transferMoney(Account source, Account destination, int amount) throws ExecutionException, InterruptedException {
+        if(amount<=0)
+            return "Transfer failed. Invalid amount";
+        if(source.equals(destination))
+            return "Transfer failed. You cant transfer money to the same account";
+        if(source.getMoneyAmount()<amount)
+            return "Transfer failed. Source account doesn't have enough money.";
+        FutureTask<String> task = new FutureTask<>(new Transaction(source,destination,amount));
+        new Thread(task).start();
+        return task.get();
+    }
+}
+
+public class Transaction implements Callable<String> {
+    private Account source;
+    private Account destination;
+    private int amount;
+
+    public Transaction(Account source, Account destination, int amount) {
+        this.source = source;
+        this.destination = destination;
+        this.amount = amount;
+    }
+
+    @Override
+    public String call() throws Exception {
+        source.setMoneyAmount(source.getMoneyAmount()-amount);
+        destination.setMoneyAmount(destination.getMoneyAmount()+amount);
+        return "Transfer succeeded.";
+    }
+}
+
+public class BankException extends Exception {
+    public BankException(String message) {
+        super(message);
+    }
+
+    public BankException(String message, Throwable cause) {
+        super(message, cause);
+    }
+}
+
+public class Account implements Comparable<Account> {
+    private int id;
+    private int userId;
+    private int moneyAmount;
+
+    public Account(int id, int userId) {
+        this.id = id;
+        this.userId = userId;
+    }
+
+    @Override
+    public String toString() {
+        return "Account{" +
+                "id=" + id +
+                ", userId=" + userId +
+                ", moneyAmount=" + moneyAmount +
+                '}';
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public int getUserId() {
+        return userId;
+    }
+
+    public int getMoneyAmount() {
+        return moneyAmount;
+    }
+
+    public void setMoneyAmount(int moneyAmount) {
+        this.moneyAmount = moneyAmount;
+    }
+
+    @Override
+    public int compareTo(Account o) {
+        return this.id - o.id;
+    }
+}
+
+public class User implements Comparable<User> {
+    private int id;
+    private String email;
+
+    public int getId() {
+        return id;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public User(int id, String email) {
+        this.id = id;
+        this.email = email;
+    }
+
+
+    @Override
+    public int compareTo(User o) {
+        return this.id-o.id;
+    }
+}
