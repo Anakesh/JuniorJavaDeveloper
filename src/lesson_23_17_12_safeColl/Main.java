@@ -145,4 +145,4 @@ bank: List<Account> accountList(все),
         source!=destination
         source.moneyAmount >= amount
 transaction (независимый класс, поток): Account source, Account dest, Bank bank, int amount, Date date
- */
+*/

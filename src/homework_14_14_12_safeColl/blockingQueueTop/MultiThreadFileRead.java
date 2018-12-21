@@ -16,7 +16,7 @@ public class MultiThreadFileRead {
         if(file.exists()&&file.isFile()){
             int numOfThreads = Runtime.getRuntime().availableProcessors();
             long fileLength = file.length();
-            long partLength = (fileLength%numOfThreads==0)? fileLength/((long)numOfThreads):(fileLength/((long)numOfThreads))+1;
+            long partLength =  (fileLength%numOfThreads==0)? fileLength/((long)numOfThreads):(fileLength/((long)numOfThreads))+1;
             BlockingQueue<String> wordQueue = new LinkedBlockingQueue<>();
             FileReaderThread[] threads = new FileReaderThread[numOfThreads];
             for(int i =0;i<numOfThreads;i++){
@@ -34,20 +34,21 @@ public class MultiThreadFileRead {
                     if(currentWord.equals(""))
                         numofStopedThreads++;
                     else{
-                        Word wordInMap = allWordMap.get(currentWord);
-                        if(wordInMap==null){
-                            wordInMap = new Word(currentWord);
-                            allWordMap.put(currentWord,wordInMap);
+//                        Word wordInMap = allWordMap.computeIfAbsent(currentWord, (k)->new Word(k));
+                        Word wordInMap = allWordMap.computeIfAbsent(currentWord, Word::new);
+                        if(topHundredWordSet.contains(wordInMap)){
+                            topHundredWordSet.remove(wordInMap);
+                            wordInMap.incrementCount();
+                            topHundredWordSet.add(wordInMap);
                         } else{
                             wordInMap.incrementCount();
-                        }
-                        if(topHundredWordSet.isEmpty()) {
-                            topHundredWordSet.add(wordInMap);
-                        } else {
-                            if (topHundredWordSet.last().compareTo(wordInMap) >= 0) {
+                            if(topHundredWordSet.isEmpty()||topHundredWordSet.size()<=100) {
                                 topHundredWordSet.add(wordInMap);
-                                if (topHundredWordSet.size() > 100)
+                            } else {
+                                if (topHundredWordSet.last().compareTo(wordInMap) >= 0) {
+                                    topHundredWordSet.add(wordInMap);
                                     topHundredWordSet.pollLast();
+                                }
                             }
                         }
                     }
@@ -55,6 +56,8 @@ public class MultiThreadFileRead {
                     e.printStackTrace();
                 }
             }
+
+            System.out.println();
         } else
             throw new FileNotFoundException();
     }

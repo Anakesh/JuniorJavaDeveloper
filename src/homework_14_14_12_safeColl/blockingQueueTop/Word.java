@@ -10,21 +10,6 @@ public class Word implements Comparable<Word> {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        Word word = (Word) o;
-
-        return text.equals(word.text);
-    }
-
-    @Override
-    public int hashCode() {
-        return text.hashCode();
-    }
-
-    @Override
     public int compareTo(Word o) {
         return o.count - this.count ;
     }
