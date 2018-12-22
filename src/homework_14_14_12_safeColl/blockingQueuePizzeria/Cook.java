@@ -17,6 +17,7 @@ public class Cook extends Thread{
             try {
                 Order order = processedOrders.take();
                 order.setOrderText("Your order: '"+order.getOrderText()+"' is done");
+
                 doneOrders.put(order);
                 order.notify();
             } catch (InterruptedException e) {
