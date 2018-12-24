@@ -16,9 +16,17 @@ public class Transaction implements Callable<String> {
 
     @Override
     public String call() throws Exception {
-
-        synchronized (source){
-            synchronized (destination){
+        Account lock1;
+        Account lock2;
+        if(source.getId()<destination.getId()){
+            lock1 = source;
+            lock2 = destination;
+        } else{
+            lock1 = destination;
+            lock2 = source;
+        }
+        synchronized (lock1){
+            synchronized (lock2){
                 source.setMoneyAmount(source.getMoneyAmount()-amount);
                 destination.setMoneyAmount(destination.getMoneyAmount()+amount);
                 return "Transfer succeeded.";

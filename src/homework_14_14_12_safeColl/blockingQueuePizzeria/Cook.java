@@ -16,13 +16,13 @@ public class Cook extends Thread{
         while(!Thread.currentThread().isInterrupted()){
             try {
                 Order order = processedOrders.take();
-                order.setOrderText("Your order: '"+order.getOrderText()+"' is done");
-
+                order.setOrderText("Your order: '" + order.getOrderText() + "' is done "/*+Thread.currentThread().getName()*/);
                 doneOrders.put(order);
-                order.notify();
+                order.getExchanger().exchange(order);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                e.printStackTrace();
+                System.out.println("Cook interrupted "+Thread.currentThread().getName());
+//                e.printStackTrace();
             }
         }
 

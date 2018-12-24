@@ -15,10 +15,13 @@ public class Waiter extends Thread {
     public void run() {
         while(!Thread.currentThread().isInterrupted()){
             try {
-                processedOrders.put(newOrders.take());
+                Order order = newOrders.take();
+                order.setOrderText(order.getOrderText()/*+" "+Thread.currentThread().getName()*/);
+                processedOrders.put(order);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                e.printStackTrace();
+                System.out.println("Waiter interrupted "+Thread.currentThread().getName());
+//                e.printStackTrace();
             }
         }
 
