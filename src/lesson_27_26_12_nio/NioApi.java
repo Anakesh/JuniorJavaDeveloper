@@ -7,9 +7,7 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
 
 public class NioApi {
     //Channel: (все каналы работают через буфер) не блокируется во время чтения/записи (может делать оба)
@@ -57,7 +55,7 @@ public class NioApi {
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         try{
             write(new File("file.txt"));
         } catch (IOException e) {
@@ -84,6 +82,24 @@ public class NioApi {
 //        Path path = Paths.get();
 
 //        Files.copy()
+        //подписывание на изменение в директории
+        Path dir = Paths.get("src");
+        WatchService watcher  = FileSystems.getDefault().newWatchService();
+
+        while(true){
+            WatchKey key = null;
+            try {
+                key = watcher.take();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            for(WatchEvent event:key.pollEvents()){
+                switch (event.kind().name()){
+
+                }
+            }
+        }
+
     }
 
 }
