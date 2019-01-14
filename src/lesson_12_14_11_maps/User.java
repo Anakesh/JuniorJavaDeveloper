@@ -16,7 +16,7 @@ public class User implements Comparable<User>{
 
     @Override
     public String toString() {
-        return "User{" +
+        return "Userrrrrr{" +
                 "id=" + id +
                 ", name='" + name + '\'' +
                 '}';

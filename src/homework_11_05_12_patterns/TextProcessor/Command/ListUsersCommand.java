@@ -13,7 +13,7 @@ public class ListUsersCommand extends Command {
     @Override
     public boolean execute(String userName) {
         StringBuilder answer = new StringBuilder();
-        answer.append("\nUser list:");
+        answer.append("\nUserrrrrr list:");
         for (String user : server.getUsers()) {
             answer.append('\n').append(user);
         }
