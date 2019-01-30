@@ -110,3 +110,132 @@ main же ждет мапы со всех воркеров на второй о�
 Порт. Корабли заходят в порт для разгрузки/загрузки. Работает несколько причалов. У одного причала может стоять один корабль. Корабль может загружаться у причала, разгружаться или выполнять оба действия.
 
 Есть движок elasticsearch, который уже много чего реализует и можно посмотреть доку, там очень многие вещи подробно расписаны. А еше можно поискать boolean search model, vectot space model, inverted index, tf/idf
+
+
+public class WebCrawler {
+    public void crawlWebPage(String inputUrl) throws IOException {
+        Pattern baseUrlPattern = Pattern.compile("^((http)|(https))://.+\\.\\w+/");
+        Pattern urlTrimPattern = Pattern.compile("^((http)|(https))://.+\\.\\w+.*(?=((\\?)|(#)))");
+
+        Matcher urlMatcher = baseUrlPattern.matcher(inputUrl);
+        if(urlMatcher.find()){
+            String baseUrl = urlMatcher.group();
+            List<String> disallowedDirs = parseRobotsTxt(baseUrl);
+            Pattern urlPattern = Pattern.compile("^"+baseUrl);
+            Document doc = Jsoup.connect(inputUrl).get();
+            Elements urlElements = doc.getElementsByAttribute("href");
+            Set<String> urls = new HashSet<>();
+            for(Element element:urlElements){
+                String url = element.absUrl("href");
+                Matcher sameSiteMatcher = urlPattern.matcher(url);
+                Matcher matcher = urlTrimPattern.matcher(url);
+                if(isAllowed(url,disallowedDirs)&&sameSiteMatcher.find()&&matcher.find()){
+                    urls.add(matcher.group());
+                }
+            }
+            urls.forEach(System.out::println);
+
+            Element body = doc.body();
+
+            String text = getText(body);
+            System.out.println(text);
+            PageParser pageParser = new PageParser();
+            pageParser.parseText(text);
+        }
+    }
+
+    public static String getText(Element currentElement){
+        StringBuilder output = new StringBuilder();
+        String elementTag = currentElement.tagName();
+        if(!currentElement.ownText().isEmpty()&& isGoodTag(elementTag)){
+            output.append('.').append(currentElement.ownText());
+        }
+        Elements children = currentElement.children();
+        if(!children.isEmpty()){
+            for(Element element:children){
+                output.append(getText(element));
+            }
+        }
+        return output.toString();
+    }
+
+    public static boolean isGoodTag(String tag){
+        List<String> badTags = Arrays.asList("a","img","form","script","link","meta");
+        if(badTags.contains(tag.toLowerCase().trim()))
+            return false;
+        else
+            return true;
+    }
+    private List<String> parseRobotsTxt(String baseUrl) throws IOException {
+        List<String> output = new ArrayList<>();
+        Pattern disallowPattern = Pattern.compile("(?<=(Disallow:)).*");
+        //Pattern userAgentPattern = Pattern.compile()
+        String robotsTxt = readRobotsTxt(baseUrl+"robots.txt");
+        String[] userAgents = robotsTxt.split("User-agent:");
+        for (String userAgent :userAgents){
+            if(userAgent.trim().matches("^\\*[\\w\\W\\s]*")){
+                String[] lines = userAgent.split("\n");
+                for(String line:lines){
+                    Matcher matcher = disallowPattern.matcher(line);
+                    if(matcher.find()){
+                        output.add(matcher.group().trim());
+                    }
+                }
+            }
+        }
+        return output;
+    }
+
+    private String readRobotsTxt(String strUrl){
+        StringBuilder out = null;
+        try {
+
+            URL url = new URL(strUrl);
+
+            // read text returned by server
+            BufferedReader in = new BufferedReader(new InputStreamReader(url.openStream()));
+            out = new StringBuilder();
+            String line;
+            while ((line = in.readLine()) != null) {
+                out.append(line).append('\n');
+            }
+            in.close();
+
+        }
+        catch (IOException e) {
+            System.out.println("I/O Error: " + e.getMessage());
+        }
+        return out.toString();
+    }
+    private boolean isAllowed(String url, List<String> disallowedDirs){
+        for(String disallowedDir :disallowedDirs){
+            if(url.contains(disallowedDir))
+                return false;
+        }
+        return true;
+    }
+}
+
+public class PageParser {
+    public Map<String,List<Integer>> parseText(String text){
+        Map<String,List<Integer>> wordMap = new HashMap<>();
+        String[] sentences = text.toLowerCase().replaceAll("[^a-zа-я.?!]"," ")
+                .replaceAll("\\d"," ")
+                .replaceAll("[\n\t]",".")
+                .replaceAll("\\s+"," ")
+                .split("[.?!]+");
+        int pos = 1;
+        for(String sentence:sentences){
+            if(!sentence.trim().isEmpty()) {
+                String[] words = sentence.trim().split("\\s+");
+                for (String word : words) {
+                    wordMap.computeIfAbsent(word, (v) -> new ArrayList<>());
+                    wordMap.get(word).add(pos);
+                }
+                pos++;
+            }
+        }
+
+        return wordMap;
+    }
+}
