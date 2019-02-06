@@ -1,96 +1,246 @@
-public interface IAlarm {
-    void tempChanged(int temp);
-}
+public class PageCrawler implements Runnable {
+    private static List<String> badTags = Arrays.asList("a","img","form","script","link","meta");
 
-public class GreenAlarm implements IAlarm {
-    private boolean isActive = false;
-    private int activationTemp = 100;
+    private BlockingQueue<WebPage> outputQueue;
+    private List<String> disallowedDirs;
+    private Queue<String> foundPages = new ArrayDeque<>();
+    private List<String> parsedPages = new ArrayList<>();
+    private Pattern baseUrlPattern = Pattern.compile("^((http)|(https))://.+\\.\\w+/");
+    private Pattern urlTrimPattern = Pattern.compile("^((http)|(https))://.+\\.\\w+.*(?=((\\?)|(#)))");
 
-    private void setActive(boolean active) {
-        isActive = active;
-        System.out.print(isActive ? "Green alarm activated" : "Green alarm deactivated");
+    public PageCrawler(BlockingQueue<WebPage> outputQueue, String inputUrl, List<String> disallowedDirs) {
+        this.outputQueue = outputQueue;
+        this.disallowedDirs = disallowedDirs;
+        foundPages.add(inputUrl);
     }
 
     @Override
-    public void tempChanged(int temp) {
-        if (temp >= activationTemp) {
-            if (!this.isActive)
-                setActive(true);
-        } else if (this.isActive)
-            setActive(false);
+    public void run() {
+        while(!foundPages.isEmpty()&&!Thread.currentThread().isInterrupted()){
+            try {
+                String currUrl = foundPages.poll();
+                if(!parsedPages.contains(currUrl)) {
+                    crawlWebPage(currUrl);
+                    parsedPages.add(currUrl);
+                    Thread.sleep(2000);
+                }
+            } catch (IOException | InterruptedException e) {
+                e.printStackTrace();
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
+    public void crawlWebPage(String inputUrl) throws IOException, InterruptedException {
+        Matcher urlMatcher = baseUrlPattern.matcher(inputUrl);
+        if(urlMatcher.find()){
+            String baseUrl = urlMatcher.group();
+            Pattern urlPattern = Pattern.compile("^"+baseUrl);
+            Document doc = Jsoup.connect(inputUrl).get();
+            Elements urlElements = doc.getElementsByAttribute("href");
+            Set<String> urls = new HashSet<>();
+            for(Element element:urlElements){
+                String url = element.absUrl("href");
+                Matcher sameSiteMatcher = urlPattern.matcher(url);
+                Matcher matcher = urlTrimPattern.matcher(url);
+                if(isAllowed(url,disallowedDirs)&&sameSiteMatcher.find()&&matcher.find()){
+                    urls.add(matcher.group());
+                }
+            }
+            foundPages.addAll(urls);
+
+            Element body = doc.body();
+
+            WebPage webPage = new WebPage();
+            webPage.setText(getText(body));
+            webPage.setUrl(inputUrl);
+
+            outputQueue.put(webPage);
+        } else{
+            System.out.println("Wrong url format. URL: "+inputUrl);
+        }
+    }
+
+    public static String getText(Element currentElement){
+        StringBuilder output = new StringBuilder();
+        String elementTag = currentElement.tagName();
+        if(!currentElement.ownText().isEmpty()&& isGoodTag(elementTag)){
+            output.append('.').append(currentElement.ownText());
+        }
+        Elements children = currentElement.children();
+        if(!children.isEmpty()){
+            for(Element element:children){
+                output.append(getText(element));
+            }
+        }
+        return output.toString();
+    }
+
+    public static boolean isGoodTag(String tag){
+        if(badTags.contains(tag.toLowerCase().trim()))
+            return false;
+        else
+            return true;
+    }
+    private boolean isAllowed(String url, List<String> disallowedDirs){
+        for(String disallowedDir :disallowedDirs){
+            if(url.contains(disallowedDir))
+                return false;
+        }
+        return true;
     }
 }
 
-public class RedAlarm implements IAlarm {
-    public int getRedInt() {
-        return redInt;
+public class RobotsTxtParser {
+    private Pattern baseUrlPattern = Pattern.compile("^((http)|(https))://.+\\.\\w+/");
+
+    public List<String> parseRobotsTxt(String url) throws IOException {
+        Matcher urlMatcher = baseUrlPattern.matcher(url);
+        if(urlMatcher.find()) {
+            String baseUrl = urlMatcher.group();
+            List<String> output = new ArrayList<>();
+            Pattern disallowPattern = Pattern.compile("(?<=(Disallow:)).*");
+            String robotsTxt = readRobotsTxt(baseUrl + "robots.txt");
+            String[] userAgents = robotsTxt.split("User-agent:");
+            for (String userAgent : userAgents) {
+                if (userAgent.trim().matches("^\\*[\\w\\W\\s]*")) {
+                    String[] lines = userAgent.split("\n");
+                    for (String line : lines) {
+                        Matcher matcher = disallowPattern.matcher(line);
+                        if (matcher.find()) {
+                            output.add(matcher.group().trim());
+                        }
+                    }
+                }
+            }
+            return output;
+        } else{
+            throw new IOException("Wrong web page format");
+        }
     }
 
-    public int redInt = 0;
-    private boolean isActive = false;
-    private int activationTemp = 600;
+    private String readRobotsTxt(String strUrl){
+        StringBuilder out = null;
+        try {
 
-    private void setActive(boolean active) {
-        isActive = active;
-        System.out.print(isActive ? "Red alarm activated" : "Red alarm deactivated");
+            URL url = new URL(strUrl);
+
+            // read text returned by server
+            BufferedReader in = new BufferedReader(new InputStreamReader(url.openStream()));
+            out = new StringBuilder();
+            String line;
+            while ((line = in.readLine()) != null) {
+                out.append(line).append('\n');
+            }
+            in.close();
+
+        }
+        catch (IOException e) {
+            System.out.println("I/O Error: " + e.getMessage());
+        }
+        return out.toString();
     }
+}
+
+public class WebCrawler implements Runnable {
+    private BlockingQueue<String> urlInQueue = new LinkedBlockingQueue<>();
+    private BlockingQueue<WebPage> webPageOutQueue = new LinkedBlockingQueue<>();
+    private SessionFactory sessionFactory;
+    private Thread webPageAdderThread;
+    private Thread websiteToCrawlAdder;
+
+
+    public WebCrawler(SessionFactory sessionFactory) {
+        this.sessionFactory = sessionFactory;
+        this.webPageAdderThread = new Thread(new WebPageAdder(sessionFactory,webPageOutQueue));
+        this.websiteToCrawlAdder = new Thread(new WebsiteToCrawlTaker(sessionFactory,urlInQueue));
+    }
+
+
 
     @Override
-    public void tempChanged(int temp) {
-        if (temp >= activationTemp) {
-            if (!this.isActive)
-                setActive(true);
-        } else if (this.isActive)
-            setActive(false);
-    }
-}
-
-public class YellowAlarm implements IAlarm {
-    private boolean isActive = false;
-    private int activationTemp = 300;
-
-    private void setActive(boolean active) {
-        isActive = active;
-        System.out.print(isActive ? "Yellow alarm activated" : "Yellow alarm deactivated");
-    }
-
-    @Override
-    public void tempChanged(int temp) {
-        if (temp >= activationTemp) {
-            if (!this.isActive)
-                setActive(true);
-        } else if (this.isActive)
-            setActive(false);
-    }
-}
-
-public class Sensor {
-    IAlarm[] alarms;
-
-    public Sensor(IAlarm... alarms) {
-        this.alarms = alarms;
-    }
-
-    public void checkAlams(int temp){
-        for(IAlarm alarm :alarms){
-            alarm.tempChanged(temp);
+    public void run() {
+        ExecutorService executor = Executors.newCachedThreadPool();
+        RobotsTxtParser robotsTxtParser = new RobotsTxtParser();
+        websiteToCrawlAdder.start();
+        webPageAdderThread.start();
+        while(!Thread.currentThread().isInterrupted()){
+            try {
+                String newWebsite = urlInQueue.take();
+                List<String> disallowedDirs = robotsTxtParser.parseRobotsTxt(newWebsite);
+                executor.execute(new PageCrawler(webPageOutQueue, newWebsite,disallowedDirs));
+            } catch (InterruptedException | IOException e) {
+                e.printStackTrace();
+                executor.shutdown();
+                webPageAdderThread.interrupt();
+                websiteToCrawlAdder.interrupt();
+                Thread.currentThread().interrupt();
+            }
         }
     }
 }
 
+public class WebPageAdder implements Runnable {
+    private SessionFactory sessionFactory;
+    private BlockingQueue<WebPage> webPageInQueue;
 
-public class Main {
-    public static void main(String[] args) {
-        IAlarm red = new RedAlarm();
+    public WebPageAdder(SessionFactory sessionFactory, BlockingQueue<WebPage> webPageInQueue) {
+        this.sessionFactory = sessionFactory;
+        this.webPageInQueue = webPageInQueue;
+    }
 
-        Sensor sensor = new Sensor(new GreenAlarm(), new YellowAlarm(),new RedAlarm());
-        int j = 50;
-        for(int i= 0;j!=-50||i>=0;i+=j){
-            System.out.print("Current temperature: "+i+'\t');
-            sensor.checkAlams(i);
-            System.out.println();
-            if(i>=700)
-                j=-50;
+    @Override
+    public void run() {
+        WebPageRep webPageRep = new WebPageRep(sessionFactory);
+        while(!Thread.currentThread().isInterrupted()){
+            try {
+                WebPage webPage = webPageInQueue.take();
+                if(webPageRep.exists(webPage)){
+                    webPageRep.update(webPage);
+                } else{
+                    webPageRep.add(webPage);
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+}
+
+public class WebsiteToCrawlTaker implements Runnable {
+    private SessionFactory sessionFactory;
+    private BlockingQueue<String> urlOutQueue;
+
+    public WebsiteToCrawlTaker(SessionFactory sessionFactory, BlockingQueue<String> urlOutQueue) {
+        this.sessionFactory = sessionFactory;
+        this.urlOutQueue = urlOutQueue;
+    }
+
+    @Override
+    public void run() {
+        WebsiteToCrawlRep websiteToCrawlRep = new WebsiteToCrawlRep(sessionFactory);
+        while(!Thread.currentThread().isInterrupted()){
+            try{
+                if(websiteToCrawlRep.isEmpty()){
+                    Thread.sleep(10000);
+                } else {
+                    WebsiteToCrawl websiteToCrawl = websiteToCrawlRep.pop();
+                    urlOutQueue.put(websiteToCrawl.getUrl());
+                }
+            }catch (InterruptedException e) {
+                e.printStackTrace();
+                try {
+                    for (String url : urlOutQueue) {
+                        WebsiteToCrawl websiteToCrawl = new WebsiteToCrawl();
+                        websiteToCrawl.setUrl(url);
+                        websiteToCrawlRep.add(websiteToCrawl);
+                    }
+                }catch (Exception ex){
+                    ex.printStackTrace();
+                }
+                Thread.currentThread().interrupt();
+            }
         }
     }
 }
