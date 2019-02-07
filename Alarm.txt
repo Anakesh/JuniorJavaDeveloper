@@ -1,147 +1,205 @@
-public class Main {
-    public static void main(String[] args) {
+public class Indexer implements Runnable{
+    private WebPage webPage;
+    private DatabaseIndexer databaseIndexer;
+    private int numOfWords;
 
-        System.out.println(Double.parseDouble("-5.5"));
+    public Indexer(WebPage webPage, DatabaseIndexer databaseIndexer) {
+        this.webPage = webPage;
+        this.databaseIndexer = databaseIndexer;
+    }
 
-        IAlarm red = new RedAlarm();
-        IAlarm green = new GreenAlarm();
-        IAlarm yellow = new YellowAlarm();
+    @Override
+    public void run() {
+        WordPack wordPack = parseText(webPage);
+        List<WordWeightPos> wordWeightPosList = calculateWeights(wordPack);
+        databaseIndexer.addWordWeightPosList(wordWeightPosList);
+        databaseIndexer.setIndexedAndTime(webPage);
+        updateAllTfIdf();
+    }
 
-        Sensor sensor = new Sensor();
-        sensor.addAlarm(red).addAlarm(green).addAlarm(yellow);
-
-        int j = 50;
-        for(int i= 0;j!=-50||i>=0;i+=j){
-            System.out.print("Current temperature: "+i+'\t');
-            sensor.newTemperature(i);
-            System.out.println();
-            if(i>=700) {
-                sensor.deleteAlarm(red);
-                j = -50;
+    public WordPack parseText(WebPage webPage){
+        Map<String,List<Integer>> wordMap = new HashMap<>();
+        String[] sentences = webPage.getText().toLowerCase().replaceAll("[^a-zа-я.?!]"," ")
+                .replaceAll("\\d"," ")
+                .replaceAll("[\n\t]",".")
+                .replaceAll("\\s+"," ")
+                .split("[.?!]+");
+        int currPos = 0;
+        for(String sentence:sentences){
+            if(!sentence.trim().isEmpty()) {
+                currPos++;
+                String[] words = sentence.trim().split("\\s+");
+                for (String word : words) {
+                    wordMap.computeIfAbsent(word, (v) -> new ArrayList<>());
+                    wordMap.get(word).add(currPos);
+                    currPos++;
+                }
             }
         }
-        sensor.deleteAlarm(green);
-        sensor.deleteAlarm(yellow);
+        numOfWords = currPos;
+        if(wordMap.isEmpty())
+            return null;
+        else{
+            return new WordPack(wordMap,numOfWords,webPage);
+        }
     }
+
+    private List<WordWeightPos> calculateWeights(WordPack wordPack){
+        List<WordWeightPos> allWords = new ArrayList<>();
+        for(Map.Entry<String,List<Integer>> entry : wordPack.getWordMap().entrySet()){
+            Word word = databaseIndexer.getWordEntity(entry.getKey());
+            Double tf = ((double) entry.getValue().size())/ wordPack.getNumOfWords();
+            Double idf = getIdf(word);
+            Double tfIdf = tf*idf;
+            for(Integer pos:entry.getValue()) {
+                WordWeightPos wordWeightPos = new WordWeightPos();
+                wordWeightPos.setWord(word);
+                wordWeightPos.setPage(webPage);
+                wordWeightPos.setTf(tf);
+                wordWeightPos.setTfIdf(tfIdf);
+                wordWeightPos.setPosition(pos);
+                allWords.add(wordWeightPos);
+            }
+        }
+        return allWords;
+    }
+
+    private void updateAllTfIdf(){
+        List<Word> wordList = databaseIndexer.getAllWords();
+        for(Word word:wordList){
+            Double idf = getIdf(word);
+            List<WordWeightPos> wordWeightPosList = databaseIndexer.getWWPbyWord(word);
+            for (WordWeightPos wwp : wordWeightPosList){
+                Double tf = databaseIndexer.getTf(wwp);
+                Double tfIdf = tf*idf;
+                databaseIndexer.updateTfIdf(tfIdf);
+            }
+        }
+    }
+
+    private Double getIdf(Word word){
+        Integer pageCount = databaseIndexer.getPageCount();
+        Integer numOfPagesWithWord = databaseIndexer.getNumOfPagesWithWord(word);
+        return Math.log(numOfPagesWithWord/pageCount);
+    }
+
 }
 
-public class Sensor {
-    private List<IAlarm> alarms = new ArrayList<>();
+public class IndexStarter implements Runnable {
+    private DatabaseIndexer databaseIndexer;
 
-    public Sensor addAlarm(IAlarm alarm){
-        this.alarms.add(alarm);
-        return this;
+    public IndexStarter(DatabaseIndexer databaseIndexer) {
+        this.databaseIndexer = databaseIndexer;
     }
 
-    public Sensor deleteAlarm(IAlarm alarm){
-        this.alarms.remove(alarm);
-        alarm.shutdown();
-        return this;
-    }
-
-    public void newTemperature(int temperature){
-        this.checkAlarms(temperature);
-    }
-
-    private void checkAlarms(int temp){
-        for(IAlarm alarm :alarms){
-            alarm.tempChanged(temp);
+    @Override
+    public void run() {
+        ExecutorService executor = Executors.newCachedThreadPool();
+        while(!Thread.currentThread().isInterrupted()){
+            try {
+                List<WebPage> webPagesToIndex = databaseIndexer.getPagesToIndex();
+                if(webPagesToIndex==null){
+                    Thread.sleep(10000);
+                } else{
+                    for(WebPage webPage: webPagesToIndex){
+                        executor.execute(new Indexer(webPage,databaseIndexer));
+                    }
+                }
+            } catch (InterruptedException | IOException e) {
+                e.printStackTrace();
+                Thread.currentThread().interrupt();
+            }
         }
     }
 }
 
-public class RedAlarm implements IAlarm {
+public class WordPack {
+    private Map<String,List<Integer>> wordMap;
+    private Integer numOfWords;
+    private WebPage webPageToIndex;
 
-    private boolean isActive = false;
-    private int activationTemp = 600;
-
-    private void setActive(boolean active) {
-        isActive = active;
-        System.out.print(isActive ? "Red alarm activated" : "Red alarm deactivated");
+    public WordPack(Map<String, List<Integer>> wordMap, Integer numOfWords, WebPage webPageToIndex) {
+        this.wordMap = wordMap;
+        this.numOfWords = numOfWords;
+        this.webPageToIndex = webPageToIndex;
     }
 
-    @Override
-    public void shutdown() {
-        if(isActive){
-            isActive = false;
-            System.out.println("Red alarm shutdown and deactivated");
-        } else{
-            System.out.println("Red alarm shutdown");
-        }
+    public Map<String, List<Integer>> getWordMap() {
+        return wordMap;
     }
 
-    @Override
-    public void tempChanged(int temp) {
-        if (temp >= activationTemp) {
-            if (!this.isActive)
-                setActive(true);
-        } else if (this.isActive)
-            setActive(false);
-    }
-}
-
-public class GreenAlarm implements IAlarm {
-    private boolean isActive = false;
-    private int activationTemp = 100;
-
-    private void setActive(boolean active) {
-        isActive = active;
-        System.out.print(isActive ? "Green alarm activated" : "Green alarm deactivated");
+    public void setWordMap(Map<String, List<Integer>> wordMap) {
+        this.wordMap = wordMap;
     }
 
-    @Override
-    public void shutdown() {
-        if(isActive){
-            isActive = false;
-            System.out.println("Green alarm shutdown and deactivated");
-        } else{
-            System.out.println("Green alarm shutdown");
-        }
-
+    public Integer getNumOfWords() {
+        return numOfWords;
     }
 
-    @Override
-    public void tempChanged(int temp) {
-        if (temp >= activationTemp) {
-            if (!this.isActive)
-                setActive(true);
-        } else if (this.isActive)
-            setActive(false);
+    public void setNumOfWords(Integer numOfWords) {
+        this.numOfWords = numOfWords;
+    }
+
+    public WebPage getWebPageToIndex() {
+        return webPageToIndex;
+    }
+
+    public void setWebPageToIndex(WebPage webPageToIndex) {
+        this.webPageToIndex = webPageToIndex;
     }
 }
 
-public class YellowAlarm implements IAlarm {
-    private boolean isActive = false;
-    private int activationTemp = 300;
+public class Ranker {
+    private DatabaseRanker databaseRanker;
 
-    private void setActive(boolean active) {
-        isActive = active;
-        System.out.print(isActive ? "Yellow alarm activated" : "Yellow alarm deactivated");
+    public Ranker(DatabaseRanker databaseRanker) {
+        this.databaseRanker = databaseRanker;
     }
 
-    @Override
-    public void shutdown() {
-        if(isActive){
-            isActive = false;
-            System.out.println("Yellow alarm shutdown and deactivated");
-        } else{
-            System.out.println("Yellow alarm shutdown");
+    public List<String> findWebPagesByWords(List<String> inStrWords){
+        List<Word> words = new ArrayList<>();
+        for (String inWord :inStrWords){
+            Word word = databaseRanker.getWord(inWord);
+            if(word!= null)
+                words.add(word);
         }
+        if(words.isEmpty())
+            return null;
+        Integer totalWordCount = databaseRanker.getWordCount();
+        
 
     }
 
+    public List<String> findWebPagesBySentence(List<String> sentence){
 
-    @Override
-    public void tempChanged(int temp) {
-        if (temp >= activationTemp) {
-            if (!this.isActive)
-                setActive(true);
-        } else if (this.isActive)
-            setActive(false);
+        return null;
     }
 }
 
-public interface IAlarm {
-    void tempChanged(int temp);
-    void shutdown();
+public class WebPageVector implements Comparator<WebPageVector>{
+    private String url;
+    private Double[] vector;
+    private Double weight;
+
+    @Override
+    public int compare(WebPageVector o1, WebPageVector o2) {
+        Double result = o2.weight - o1.weight;
+        return (result < 0) ? -1 : ((result > 0) ? 1 : 0);
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public Double getWeight() {
+        return weight;
+    }
+
+    public void setWeight(Double weight) {
+        this.weight = weight;
+    }
 }
